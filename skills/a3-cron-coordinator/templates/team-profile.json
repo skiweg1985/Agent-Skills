@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "configuredAt": "2026-01-01T00:00:00+00:00",
+  "roles": {
+    "coordinator": null,
+    "support": null,
+    "frontend": null,
+    "backendSecurity": null,
+    "review": null
+  },
+  "notes": "Local desired role bindings only. Keep hosts, credentials, tokens, and machine-specific connection details in private policy, not here."
+}
