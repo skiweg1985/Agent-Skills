@@ -153,19 +153,19 @@ Before the first repository write, resolve four values from current evidence:
 3. the current session identifier;
 4. the owning Linear or repository issue identifier.
 
-Use the persona explicitly supplied by the orchestrator or the applicable host-operations skill. Otherwise use the authenticated Linear display name only when that identity is known to represent this worker. Product, runtime, provider, and model-family names such as `Codex`, `Claude Code`, `GPT`, `Gemini`, or `OpenRouter` are never a fallback persona unless an explicit host mapping assigns that exact name. Do not invent a persona from the machine username, shared GitHub login, branch author, or model provider. If the worker identity or session is ambiguous, stop before committing or writing on GitHub and ask the coordinator to resolve it; never emit a guessed signature merely to satisfy a format requirement.
+Use the persona explicitly supplied by the orchestrator, the current host or agent configuration, or the applicable host-operations skill. Otherwise use the authenticated Linear display name only when that identity is known to represent this worker. Product, runtime, provider, and model-family names such as `Codex`, `Claude Code`, `GPT`, `Gemini`, or `OpenRouter` are never a fallback persona unless an explicit host mapping assigns that exact name. Do not invent a persona from the machine username, shared GitHub login, branch author, or model provider. If the worker identity or session is ambiguous, stop before committing or writing on GitHub and ask the coordinator to resolve it; never emit a guessed signature merely to satisfy a format requirement.
 
 For every new commit made through a shared account:
 
-- set the Git author and committer **name** to the agent display name for that commit, for example with `git -c user.name="Axel Foundry" commit ...`; keep the repository's configured shared email unchanged so the commit remains linked to the intended repository-host account;
+- set the Git author and committer **name** to the agent display name for that commit, for example with `git -c user.name="<Agent Display Name>" commit ...`; keep the repository's configured shared email unchanged so the commit remains linked to the intended repository-host account;
 - if no commit email is configured, resolve the authenticated shared account first and use its provider-supported noreply address only for that commit. On GitHub.com, derive the recognized form from the authenticated account returned by `gh api user` as `<numeric-id>+<login>@users.noreply.github.com`; do not guess a human email, print it in comments, or persist it as global/shared repository configuration;
 - do not change global Git configuration, and do not use repository-local `user.name` or `user.email` in a shared multi-worktree repository because it can leak into another worker's commits;
 - keep the subject concise and conventional, then include these machine-readable trailers in the commit message:
 
   ```text
-  Agent: Axel Foundry
-  Agent-Session: ops-sud257-axel-20260903-01
-  Linear-Issue: SUD-257
+  Agent: <Agent Display Name>
+  Agent-Session: <session-identifier>
+  Linear-Issue: <ISSUE-KEY>
   ```
 
 - use the repository issue key instead of `Linear-Issue` only when the work has no Linear record. Never claim another person's authorship and never place account emails, tokens, hostnames, or credentials in the trailers.
@@ -173,7 +173,7 @@ For every new commit made through a shared account:
 For every PR body, PR review, GitHub issue comment, and PR comment written through the shared account, append one natural signature line:
 
 ```markdown
-— Axel Foundry / Session `ops-sud257-axel-20260903-01`
+— <Agent Display Name> / Session `<session-identifier>`
 ```
 
 The signature is required even when the branch name contains the persona, because branches are mutable and GitHub renders every comment under the shared login. Keep routine Linear comments on their existing session-only signature: Linear already displays the distinct OAuth author, while GitHub does not.
