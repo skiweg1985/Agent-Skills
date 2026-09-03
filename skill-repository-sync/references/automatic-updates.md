@@ -11,7 +11,7 @@ install -Dm755 \
 Recommended user crontab entry:
 
 ```cron
-*/15 * * * * /home/coder2/.local/bin/update-agent-skills >> /home/coder2/.local/state/agent-skills/update.log 2>&1
+*/15 * * * * $HOME/.local/bin/update-agent-skills >> $HOME/.local/state/agent-skills/update.log 2>&1
 ```
 
 ## Manual checks

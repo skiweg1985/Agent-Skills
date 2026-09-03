@@ -7,5 +7,6 @@ This repository contains public, cross-agent skills.
 - Put reusable scripts and documentation below the owning skill directory.
 - Do not commit secrets, private URLs, customer data, credentials, internal logs, or machine-specific authentication state.
 - Keep examples generic unless public project identifiers are intentionally part of the documentation.
+- Do not hard-code deployment-specific hostnames, IP addresses, usernames, or absolute home paths in shared skills or examples. Use placeholders, `$HOME`, or documented environment variables instead.
 - Validate every changed skill before publishing.
 - Use a branch and pull request for material changes; do not edit deployed clones as a distribution mechanism.
