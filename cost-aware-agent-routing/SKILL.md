@@ -18,6 +18,19 @@ Map the active agents to these role classes from current configuration, reposito
 
 A person or model may cover more than one class only when the current team profile says so. Keep one accountable owner per issue.
 
+## Local team profile (private deployment configuration)
+
+A shared skill must not embed local people, agent names, hostnames, model entitlements, customer context, or organization-specific routing. On a deployed shared host, the coordinator or host operator should create a private local profile at `~/.agents/team-profile.md` and keep it outside every Git checkout.
+
+Before assigning a role, read that file when it exists. It maps local agents to the generic role classes above and may define escalation targets, ownership conventions, or model-cost tiers for that host. If it is absent, use an explicit coordinator assignment or ask for one; do not infer a role from a display name.
+
+The local profile must not be committed, copied into a repository, attached to an issue or pull request, or quoted into public skill content. Treat it as host-local operational configuration. A minimal profile should state:
+
+1. the precedence order between current user direction, repository rules, coordinator assignments, and the local profile;
+2. the current mapping from role classes to agent identities and model tiers;
+3. ownership, handoff, and escalation conventions;
+4. the prohibition on concurrent writes to the same files or interface decisions.
+
 ## Route work in this order
 
 1. Read the current request, repository working agreement, issue, dependencies, and active ownership before selecting a role.
