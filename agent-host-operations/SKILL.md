@@ -1,6 +1,6 @@
 ---
 name: agent-host-operations
-description: Safe operating conventions for autonomous coding work on this shared Codex and Claude Code agent host. Use when preparing, implementing, testing, reviewing, or publishing project changes on coder2.
+description: Safe operating conventions for autonomous coding work on shared Claude Code, Codex, and OpenCode agent hosts. Use when preparing, implementing, testing, reviewing, or publishing project changes on a multi-agent development host.
 ---
 
 # Agent Host Operations
