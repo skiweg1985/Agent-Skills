@@ -142,6 +142,46 @@ Complete a refresh only when the own issue assignment, assigned repository issue
 
 If a refresh reveals overlap, stop before the next edit, commit, push, or integration. Preserve existing local work, explain the conflict in a concise natural-language comment naming both issues and write sets, and resolve the overlap by splitting scope, adding a dependency, handing off, or obtaining a human decision. Never discard another agent's or the current agent's work to make the conflict disappear.
 
+## Preserve attribution under a shared repository account
+
+A shared GitHub or other repository-host account is transport authentication, not worker identity. When several agents publish through that account, make the actual agent and session visible in Git history and every repository-host write so a reviewer can distinguish workers without correlating external logs.
+
+Before the first repository write, resolve four values from current evidence:
+
+1. the authenticated repository-host account;
+2. the agent's stable display name or persona for this run;
+3. the current session identifier;
+4. the owning Linear or repository issue identifier.
+
+Use the persona explicitly supplied by the orchestrator, the current host or agent configuration, or the applicable host-operations skill. Otherwise use the authenticated Linear display name only when that identity is known to represent this worker. Product, runtime, provider, and model-family names such as `Codex`, `Claude Code`, `GPT`, `Gemini`, or `OpenRouter` are never a fallback persona unless an explicit host mapping assigns that exact name. Do not invent a persona from the machine username, shared GitHub login, branch author, or model provider. If the worker identity or session is ambiguous, stop before committing or writing on GitHub and ask the coordinator to resolve it; never emit a guessed signature merely to satisfy a format requirement.
+
+For every new commit made through a shared account:
+
+- set the Git author and committer **name** to the agent display name for that commit, for example with `git -c user.name="<Agent Display Name>" commit ...`; keep the repository's configured shared email unchanged so the commit remains linked to the intended repository-host account;
+- if no commit email is configured, resolve the authenticated shared account first and use its provider-supported noreply address only for that commit. On GitHub.com, derive the recognized form from the authenticated account returned by `gh api user` as `<numeric-id>+<login>@users.noreply.github.com`; do not guess a human email, print it in comments, or persist it as global/shared repository configuration;
+- do not change global Git configuration, and do not use repository-local `user.name` or `user.email` in a shared multi-worktree repository because it can leak into another worker's commits;
+- keep the subject concise and conventional, then include these machine-readable trailers in the commit message:
+
+  ```text
+  Agent: <Agent Display Name>
+  Agent-Session: <session-identifier>
+  Linear-Issue: <ISSUE-KEY>
+  ```
+
+- use the repository issue key instead of `Linear-Issue` only when the work has no Linear record. Never claim another person's authorship and never place account emails, tokens, hostnames, or credentials in the trailers.
+
+For every PR body, PR review, GitHub issue comment, and PR comment written through the shared account, append one natural signature line:
+
+```markdown
+— <Agent Display Name> / Session `<session-identifier>`
+```
+
+The signature is required even when the branch name contains the persona, because branches are mutable and GitHub renders every comment under the shared login. Keep routine Linear comments on their existing session-only signature: Linear already displays the distinct OAuth author, while GitHub does not.
+
+Before push or handoff, verify the new commits without printing or publishing the shared email: inspect `%an` and `%B`, confirm the expected `Agent`, `Agent-Session`, and issue trailers, and ensure no commit from another active worktree was accidentally included. After every GitHub write, read the PR, review, or comment back and verify the visible signature. A successful API response alone is insufficient.
+
+Apply this rule prospectively. If an unpublished current commit lacks attribution, amend it before push when safe. If a commit is already published or reviewed, do not force-push or rewrite history solely to add metadata; add the signed attribution to the PR body or a follow-up comment and preserve the immutable history. These labels improve operational provenance but are not cryptographic proof of identity.
+
 ## Write comments like a human teammate
 
 Write the comment a helpful teammate would leave after doing the work. The reader should understand it on the first pass without decoding a template. Treat claim, status, conflict, blocker, release, handoff, and completion as internal event types, not labels to print.
