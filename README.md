@@ -7,6 +7,7 @@ Shared, public [Agent Skills](https://agentskills.io/) for autonomous coding age
 - `agent-host-operations` — safe conventions for autonomous work on a shared agent host.
 - `linear-coordinate-agents` — coordinate parallel agents through Linear, repository working agreements, isolated worktrees, and review gates.
 - `skill-repository-sync` — safely update a deployed clone of this repository through an externally installed updater.
+- **Matt Pocock Skills** — 37 MIT-licensed engineering and productivity skills vendored from [`mattpocock/skills`](https://github.com/mattpocock/skills), including eight explicitly marked upstream as in progress. They are installed as top-level skill directories for cross-agent discovery; see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for the pinned revision, complete inventory, and license reference.
 
 ## Installation
 
