@@ -24,3 +24,5 @@ The updater:
 Report whether the repository was already current or name the old and new commit IDs. If the updater reports a dirty clone, remote mismatch, validation failure, or missing executable, stop and report the blocker. Do not repair it with `git reset --hard`, change the remote, reinstall the updater, edit the deployment clone, or modify cron unless the user explicitly authorizes that maintenance.
 
 The deployed skills are shared by Codex through `~/.agents/skills` and by Claude Code through `~/.claude/skills`. Updating either path therefore updates both agents.
+
+For installation, cron, logging, and failure-handling details, read [the automatic-update reference](references/automatic-updates.md).
