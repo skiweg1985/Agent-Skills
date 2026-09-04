@@ -51,20 +51,26 @@ from pathlib import Path
 
 root = Path(sys.argv[1]).resolve()
 name_re = re.compile(r"^[a-z0-9]+(?:[-_][a-z0-9]+)*$")
-seen = set()
+seen = {}
 errors = []
-skills = []
 
-for skill_file in sorted(root.glob("*/SKILL.md")):
-    skills.append(skill_file)
+# Top-level directories are what Codex and Claude Code discover. Directories
+# under skills/ are published for other consumers and are deliberately not
+# discovered here, but they are validated too so a broken one cannot ship
+# unnoticed.
+discovered = sorted(root.glob("*/SKILL.md"))
+nested = sorted(root.glob("skills/*/SKILL.md"))
+
+for skill_file in discovered + nested:
+    rel = skill_file.relative_to(root)
     text = skill_file.read_text(encoding="utf-8")
     if not text.startswith("---\n"):
-        errors.append(f"{skill_file}: missing YAML frontmatter")
+        errors.append(f"{rel}: missing YAML frontmatter")
         continue
     try:
         _, frontmatter, _ = text.split("---", 2)
     except ValueError:
-        errors.append(f"{skill_file}: malformed YAML frontmatter")
+        errors.append(f"{rel}: malformed YAML frontmatter")
         continue
     fields = {}
     for line in frontmatter.splitlines():
@@ -74,21 +80,23 @@ for skill_file in sorted(root.glob("*/SKILL.md")):
     name = fields.get("name", "")
     description = fields.get("description", "")
     if not name_re.fullmatch(name):
-        errors.append(f"{skill_file}: invalid or missing name")
+        errors.append(f"{rel}: invalid or missing name")
     if name and name != skill_file.parent.name:
-        errors.append(f"{skill_file}: name does not match directory")
+        errors.append(f"{rel}: name does not match directory")
     if not description:
-        errors.append(f"{skill_file}: missing description")
-    if name in seen:
-        errors.append(f"{skill_file}: duplicate skill name {name}")
-    seen.add(name)
+        errors.append(f"{rel}: missing description")
+    if name:
+        if name in seen:
+            errors.append(f"{rel}: duplicate skill name {name} (also {seen[name]})")
+        else:
+            seen[name] = rel
 
-if not skills:
-    errors.append("repository contains no skills")
+if not discovered:
+    errors.append("repository contains no discoverable skills")
 if errors:
     print("\n".join(errors), file=sys.stderr)
     raise SystemExit(1)
-print(f"Validated {len(skills)} shared skills.")
+print(f"Validated {len(discovered)} discoverable and {len(nested)} nested skills.")
 PY
 }
 

@@ -19,7 +19,7 @@ The updater:
 4. fetches `origin/main`;
 5. permits only a fast-forward update;
 6. installs the third-party skills declared in `upstream-skills.json` from their own upstream repositories;
-7. validates every skill's `SKILL.md` metadata;
+7. validates the metadata of every skill, both the top-level directories the agents discover and any published under `skills/`;
 8. rolls back to the previous commit if installation or validation fails.
 
 Report whether the repository was already current or name the old and new commit IDs. If the updater reports a dirty clone, remote mismatch, failed upstream install, validation failure, or missing executable, stop and report the blocker. Do not repair it with `git reset --hard`, change the remote, reinstall the updater, edit the deployment clone, or modify cron unless the user explicitly authorizes that maintenance.
@@ -27,6 +27,8 @@ Report whether the repository was already current or name the old and new commit
 ## Skills installed from upstream
 
 This repository does not vendor third-party skills. `upstream-skills.json` names each source repository, its pinned revision, and the skills to install, and the updater materializes them in the deployment clone. They are therefore present in every agent without being copied into this repository, and the clone stays clean because installed directories are excluded through the clone's own `.git/info/exclude`.
+
+Not every skill in this repository is meant for these agents. A directory under `skills/` is published for another consumer and is deliberately not discovered by Codex or Claude Code, but the updater still validates its metadata, so a broken one cannot ship unnoticed.
 
 Change what is deployed by editing the manifest and letting the sync run, not by copying directories into the deployment clone. A skill removed from the manifest is deleted from the clone on the next run.
 

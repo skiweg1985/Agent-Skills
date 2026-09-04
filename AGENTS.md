@@ -3,6 +3,7 @@
 This repository contains public, cross-agent skills.
 
 - Every skill lives in `<skill-name>/SKILL.md` and follows the Agent Skills standard.
+- A skill intended for the Hermes tap instead lives in `skills/<skill-name>/SKILL.md`; that path is indexed by the tap and is not discovered by Codex or Claude Code. See the README for which surface to choose.
 - Keep the required frontmatter limited to a valid `name` and a precise `description`; provider-specific optional fields must degrade safely in other agents.
 - Put reusable scripts and documentation below the owning skill directory.
 - Do not commit secrets, private URLs, customer data, credentials, internal logs, or machine-specific authentication state.
