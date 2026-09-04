@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 2,
+  "roles": {
+    "base": "Installed on every host regardless of what it does.",
+    "coordinator": "Orchestrates remote coding agents. Never implements.",
+    "worker": "Implements, reviews and validates code."
+  },
+  "defaultRoles": [
+    "base"
+  ],
+  "sources": [
+    {
+      "id": "mattpocock-skills",
+      "repository": "https://github.com/mattpocock/skills.git",
+      "revision": "6654f6b60cd9d5be8b54c6fafe44346dabeb3b76",
+      "skillRoot": "skills",
+      "license": "MIT",
+      "licenseNotice": "licenses/mattpocock-skills-MIT.txt"
+    }
+  ],
+  "skills": {
+    "a3-cron-coordinator": {
+      "groups": [
+        "coordinator"
+      ],
+      "source": "local"
+    },
+    "agent-host-operations": {
+      "groups": [
+        "base"
+      ],
+      "source": "local"
+    },
+    "ask-matt": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "claude-handoff": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "code-review": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "codebase-design": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "cost-aware-agent-routing": {
+      "groups": [
+        "coordinator"
+      ],
+      "source": "local"
+    },
+    "diagnosing-bugs": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "documentation-standards": {
+      "groups": [
+        "base"
+      ],
+      "source": "local"
+    },
+    "domain-modeling": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "git-guardrails-claude-code": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "grill-me": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "grill-with-docs": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "grilling": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "handoff": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "implement": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "implement-spec": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "improve-codebase-architecture": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "linear-coordinate-agents": {
+      "groups": [
+        "base"
+      ],
+      "source": "local"
+    },
+    "loop-me": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "migrate-to-shoehorn": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "prototype": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "research": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "resolving-merge-conflicts": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "retro": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "scaffold-exercises": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "schreibstil-pruefen": {
+      "groups": [
+        "base"
+      ],
+      "source": "local"
+    },
+    "setup-matt-pocock-skills": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "setup-pre-commit": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "setup-ts-deep-modules": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "skill-repository-sync": {
+      "groups": [
+        "base"
+      ],
+      "source": "local"
+    },
+    "tdd": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "teach": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "to-questionnaire": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "to-spec": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "to-tickets": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "triage": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "wait-what": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "wayfinder": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "wizard": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "writing-beats": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "writing-for-agents": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "writing-fragments": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    },
+    "writing-shape": {
+      "groups": [
+        "worker"
+      ],
+      "source": "mattpocock-skills"
+    }
+  }
+}

@@ -1,196 +1,168 @@
 # Agent Skills
 
-Shared, public [Agent Skills](https://agentskills.io/) for autonomous coding agents such as OpenAI Codex and Claude Code.
+Shared, public [Agent Skills](https://agentskills.io/) for autonomous coding
+agents. One repository serves Codex, Claude Code, OpenCode and Hermes, and each
+host receives only the skills its declared roles call for.
 
-## How this repository reaches an agent
-
-One repository, two distribution surfaces, plus a third-party source that is never
-stored here.
+## How a skill reaches an agent
 
 ```mermaid
 flowchart LR
   subgraph repo["skiweg1985/Agent-Skills"]
-    own["top-level directories<br/>own skills"]
-    tapdir["skills/<br/>Hermes-only skills"]
+    own["skills/<br/>own skills"]
+    manifest["skill-manifest.json<br/>group per skill"]
   end
 
   upstream["mattpocock/skills<br/>pinned revision"]
+  conf["host.conf<br/>declared roles"]
 
   subgraph host["agent host"]
-    deploy["~/.agents/skills<br/>deployment clone"]
-    codex["Codex"]
-    cc["Claude Code"]
+    clone["~/.local/share/agent-skills<br/>clone, every skill"]
+    delivery["~/.agents/skills<br/>generated, this host only"]
   end
 
-  hermes["Hermes tap index"]
-  hinstall["hermes skills install<br/>full bundle"]
+  codex["Codex"]
+  cc["Claude Code"]
+  oc["OpenCode"]
+  hermes["Hermes"]
 
-  own -->|"updater, fast-forward only"| deploy
-  upstream -->|"install-upstream-skills.py"| deploy
-  deploy --> codex
-  deploy --> cc
-  tapdir -->|"hermes skills tap add"| hermes
-  hermes --> hinstall
-  tapdir -.->|"cloned along, never discovered"| deploy
+  own --> clone
+  manifest --> clone
+  clone -->|"updater"| delivery
+  upstream -->|"at pinned revision"| delivery
+  conf -->|"selects groups"| delivery
+  delivery --> codex
+  delivery --> cc
+  delivery --> oc
+  delivery -->|"external_dirs"| hermes
 ```
 
-| Surface | Path | Consumed by | Stored in this repository |
-| --- | --- | --- | --- |
-| Own skills | `<skill-name>/` | Codex, Claude Code | yes |
-| Hermes tap | `skills/<skill-name>/` | Hermes | yes |
-| Upstream skills | `<skill-name>/`, installed | Codex, Claude Code | no, declared only |
+The clone holds every skill; the delivery directory holds only what this host
+selected. A coordinator does not merely refrain from using implementation
+skills — it does not have them.
 
-The updater validates the first two and deploys the first and third. Discovery and
-validation are deliberately separate, so a Hermes-only skill stays invisible to the
-other agents without escaping the metadata checks.
+## Roles and groups
 
-## Included skills
+Every skill declares one or more groups in
+[`skills/skill-repository-sync/skill-manifest.json`](skills/skill-repository-sync/skill-manifest.json).
+Every host declares roles. The updater installs the intersection.
 
-- `agent-host-operations` — safe conventions for autonomous work on a shared agent host.
-- `cost-aware-agent-routing` — route work between low-cost and premium coding agents.
-- `documentation-standards` — keep software-repository documentation accurate, lean, and task-oriented.
-- `linear-coordinate-agents` — coordinate parallel agents through Linear, repository working agreements, isolated worktrees, and review gates.
-- `schreibstil-pruefen` — review and improve German technical writing against repository conventions and a measured fallback style guide.
-- `skill-repository-sync` — safely update a deployed clone of this repository through an externally installed updater.
+| Group | Contents |
+| --- | --- |
+| `base` | `agent-host-operations`, `linear-coordinate-agents`, `skill-repository-sync`, `documentation-standards`, `schreibstil-pruefen` |
+| `coordinator` | the orchestrator and `cost-aware-agent-routing` |
+| `worker` | the skills installed from [`mattpocock/skills`](https://github.com/mattpocock/skills) |
 
-## Skills published for the Hermes tap
+`linear-coordinate-agents` is in `base` rather than `coordinator`: most of it
+addresses the agent doing the work — claiming an issue, commit attribution,
+comment signatures, blockers and handoff.
 
-`skills/` is a second distribution surface, not a stray directory. Hermes registers
-this repository as a tap and indexes exactly that path:
-
-```bash
-hermes skills tap add skiweg1985/Agent-Skills
-```
-
-A skill placed in `skills/<skill-name>/` is discoverable through that tap and is
-deliberately **not** discovered by Codex or Claude Code, which only read the top
-level. Currently published this way: `a3-cron-coordinator`.
-
-Three consequences worth knowing:
-
-- Hermes installs the complete bundle — `SKILL.md` plus `scripts/`, `references/`,
-  and `templates/`. Keep such a skill self-contained; do not install it from a raw
-  `SKILL.md` URL, which fetches that one file and silently drops the rest.
-- A tap reads the repository's default branch, so a change becomes tap-visible only
-  after it lands on `main`.
-- The updater validates `skills/*/SKILL.md` with the same rules as the top level but
-  never deploys it to `~/.agents/skills`. Validation and discovery are separate on
-  purpose: a broken skill here cannot ship to Hermes unnoticed, and a Hermes-only
-  skill does not appear in the other agents.
-
-Put a skill at the top level when the agents on a host should load it, and under
-`skills/` when it is meant for the tap.
-
-## Skills installed from upstream
-
-This repository stores only its own skills. Third-party collections are declared in
-[`skill-repository-sync/upstream-skills.json`](skill-repository-sync/upstream-skills.json)
-and installed straight from their source by the updater, so they stay available in
-every agent without being copied into this repository.
-
-Currently declared: **37 MIT-licensed engineering and productivity skills** from
-[`mattpocock/skills`](https://github.com/mattpocock/skills), eight of which upstream
-marks as in progress. See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for
-provenance and license.
-
-Installed directories are excluded from Git inside the deployment clone, so the
-updater's dirty check keeps protecting genuine local changes. Run the updater once
-after cloning to materialize them.
+**A skill with no group aborts the sync.** That keeps a skill from disappearing
+silently and stops an upstream source from introducing one without a deliberate
+assignment. Reasoning is in
+[the distribution decision](docs/decisions/role-based-skill-distribution.md).
 
 ## Installation
 
-Follow the section for the agent you are installing on. The surfaces are
-independent; a host may use one or both.
-
-### Codex and Claude Code
-
-Codex discovers user-level skills in `~/.agents/skills`. Claude Code discovers
-personal skills in `~/.claude/skills` and follows symlinks.
+### 1. Clone and declare this host's roles
 
 ```bash
-git clone https://github.com/skiweg1985/Agent-Skills.git ~/.agents/skills
+git clone https://github.com/skiweg1985/Agent-Skills.git ~/.local/share/agent-skills
+
+mkdir -p ~/.config/agent-skills
+printf 'AGENT_SKILLS_ROLES="base worker"\n' > ~/.config/agent-skills/host.conf
+```
+
+Omit the file and the host gets `base` alone — a host is never a coordinator by
+accident. Use `"base coordinator"` on the machine that orchestrates and
+`"base worker"` on machines that implement. `AGENT_SKILLS_ROLES` in the
+environment overrides the file.
+
+### 2. Install the updater and run it once
+
+```bash
+install -Dm755 \
+  ~/.local/share/agent-skills/skills/skill-repository-sync/scripts/update-agent-skills.sh \
+  ~/.local/bin/update-agent-skills
+~/.local/bin/update-agent-skills
+```
+
+This generates `~/.agents/skills`. Nothing is discoverable before it runs.
+
+### 3. Point the agent at the delivery directory
+
+**Codex** reads `~/.agents/skills` directly. Nothing to do.
+
+**Claude Code** reads `~/.claude/skills` and follows symlinks:
+
+```bash
 mkdir -p ~/.claude
 ln -s ../.agents/skills ~/.claude/skills
 ```
 
-If either path already exists, back it up and reconcile its contents before
-cloning. Do not overwrite existing skills blindly.
+**OpenCode** already reads `~/.agents/skills` and `~/.claude/skills` natively.
+Nothing to do.
 
-Then install the updater outside the clone and run it once. Until it runs, only
-this repository's own skills are present — the upstream skills are declared, not
-stored, and the updater fetches them:
+**Hermes** reads its own directory plus any path in `skills.external_dirs`:
 
-```bash
-install -Dm755 \
-  ~/.agents/skills/skill-repository-sync/scripts/update-agent-skills.sh \
-  ~/.local/bin/update-agent-skills
-~/.local/bin/update-agent-skills
+```yaml
+# ~/.hermes/config.yaml
+skills:
+  external_dirs:
+    - ~/.agents/skills
 ```
 
-A successful run reports how many skills it installed and validated.
+The repository can also be registered as a Hermes tap
+(`hermes skills tap add skiweg1985/Agent-Skills`, indexing `skills/`). That is a
+browsable catalog for deliberate manual installs; it delivers nothing by default,
+because a tap would bypass the role mechanism. Install a skill whole rather than
+fetching a raw `SKILL.md` URL — `scripts/`, `references/` and `templates/` are
+part of a skill and a single-file fetch drops them.
 
-### Hermes
+If any of these paths already exists, back it up and reconcile before pointing
+the agent at it. Do not overwrite existing skills blindly.
 
-Hermes registers this repository as a tap and indexes `skills/`. Skills are then
-searched and installed deliberately, one at a time:
-
-```bash
-hermes skills tap add skiweg1985/Agent-Skills
-hermes skills search a3-cron-coordinator
-hermes skills install a3-cron-coordinator
-```
-
-`hermes skills tap list` shows the effective path per tap; it must be `skills/`
-for this repository. Install the whole skill through the tap rather than
-fetching a raw `SKILL.md` URL — a skill's `scripts/`, `references/`, and
-`templates/` are part of it, and a single-file fetch silently drops them.
-
-Only Hermes-exclusive skills live on the tap. Shared skills such as
-`linear-coordinate-agents` and `cost-aware-agent-routing` sit at the top level
-and do not reach Hermes this way. How they will is settled in
-[the distribution decision](docs/decisions/hermes-skill-distribution.md) — a
-curated directory filled by the updater and referenced from
-`skills.external_dirs` in `~/.hermes/config.yaml`. **That mechanism is decided
-but not yet built.** Until it is, a Hermes host has the tap surface only.
-
-### Verifying an installation
-
-```bash
-~/.local/bin/update-agent-skills          # Codex, Claude Code: sync and validate
-hermes skills list                        # Hermes: what is installed and enabled
-```
-
-## Automatic updates
-
-The updater is installed outside the repository so that an ordinary pull cannot
-change the program cron executes. Run it manually:
+## Keeping a host current
 
 ```bash
 ~/.local/bin/update-agent-skills
 ```
 
-A cron example is included in the `skill-repository-sync` skill. The updater only
-accepts the expected GitHub remote, refuses a dirty deployment clone, performs a
-fast-forward-only update, installs the declared upstream skills at their pinned
-revisions, validates skill metadata, and rolls back to the previous commit if
-installation or validation fails.
+A cron example is in the `skill-repository-sync` skill. The updater accepts only
+the expected remote, refuses a dirty clone, updates fast-forward only, installs
+the selected skills, validates metadata, and rolls back on failure.
 
-The updater does not replace itself. After a change to
-`skill-repository-sync/scripts/update-agent-skills.sh`, reinstall it explicitly:
+Every run writes `~/.local/state/agent-skills/sync-status.json` with the outcome,
+the commit, the roles, and a separate `lastSuccessAt`. Under cron a failure is
+otherwise silent, so **check that record when a skill is unexpectedly missing**:
 
 ```bash
-install -Dm755 \
-  ~/.agents/skills/skill-repository-sync/scripts/update-agent-skills.sh \
-  ~/.local/bin/update-agent-skills
+python3 -c "import json;d=json.load(open('$HOME/.local/state/agent-skills/sync-status.json'));print(d['outcome'], d['lastSuccessAt'])"
 ```
+
+A `lastSuccessAt` older than roughly twice the cron interval means the sync has
+been failing.
+
+The updater does not replace itself, so an ordinary pull cannot change what cron
+executes. After a change to the updater script, reinstall it explicitly with the
+command from step 2.
+
+## Third-party skills
+
+Skills from other projects are declared, not stored here. The manifest names the
+source repository, its pinned revision, and each skill's group; the updater
+installs them from upstream. See
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for provenance and licensing.
 
 ## Project-specific skills
 
-This repository is intended for skills that should apply across projects. Keep project-specific instructions in the repository that owns the project:
+Keep instructions that belong to one project in that project's repository:
 
 - Codex: `.agents/skills/<skill-name>/SKILL.md`
 - Claude Code: `.claude/skills/<skill-name>/SKILL.md`
+- OpenCode: `.opencode/skills/<skill-name>/SKILL.md`
 
 ## Public repository policy
 
-Never commit credentials, tokens, customer data, private infrastructure details, or sensitive logs. Use example identifiers and sanitized evidence only.
+Never commit credentials, tokens, customer data, private infrastructure details,
+or sensitive logs. Use example identifiers and sanitized evidence only.
