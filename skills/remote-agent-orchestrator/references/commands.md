@@ -73,6 +73,10 @@ dispatch.
    Verify both independently — the worker saying so is not evidence.
 7. Create one temporary supervisor cron job and persist its id with `wave enable`.
 
+A human exception for a specific breach is granted as a comment on the issue,
+where the coordinator verifies it independently and the next agent can still find
+it. It covers that one merge only.
+
 A missing registry entry, an unreachable host, or a worktree the worker cannot
 write in is a hard stop for that issue:
 do not dispatch, release its lock, report it. Never substitute another agent.
@@ -140,8 +144,10 @@ Each scheduled run supervises; it does not widen the wave.
    moving; a coordinator that reviews is no longer an independent check.
 5. For reviewed work, **first read that record back**. No published review means
    the work is not reviewed, whatever the reviewer reported to you; do not merge,
-   and say what is missing. Then check the diff against the declared write set and
-   merge. Record non-blocking findings as their own tracker items with an owner
+   and say what is missing. Then check the diff against the declared write set.
+   Files beyond it that overlap another active worker are a hard stop; files that
+   overlap nobody and are covered by the review are recorded as a deviation on the
+   issue and merged. Say which of the two you found, and name the files. Record non-blocking findings as their own tracker items with an owner
    before closing, rather than listing them in the closing report.
    Two finished pull requests that collide merge in completion order; the later
    one rebases, and a non-trivial rebase becomes a blocked issue back to a worker.
