@@ -159,6 +159,14 @@ Run **as many workers as there are issues with disjoint write sets**, under the
 project's `maxWorkers` cap. The cap is an emergency brake, not the steering.
 
 **Review is mandatory and performed by an agent other than the implementer.**
+**It must leave a record the coordinator did not write.** The reviewer posts its
+own findings under its own identity — a pull request review, or a tracker comment
+with its session identifier, as the implementer does for its claim. Verify that
+record independently before merging, exactly as you verify the start comment. A
+review you only heard about is a worker's claim, and this skill does not treat a
+claim as evidence; relaying it in your own summary launders it into a fact.
+Findings that do not block go into the tracker as their own record with an owner,
+not into a closing paragraph where they are read once and lost.
 A review is work: it occupies a slot and its own lock. **The coordinator merges** —
 it is the only party that sees every write set in the wave and can tell whether
 two finished pull requests break together. When two collide, the first to finish
