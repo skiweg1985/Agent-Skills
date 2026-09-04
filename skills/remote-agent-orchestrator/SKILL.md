@@ -361,6 +361,12 @@ your own — say that the coordinator verified, renewed or blocked something.
 Follow the tracker skill's comment conventions: natural sentences, no key-value
 scaffolding, the session identifier as the single trailing line.
 
+Use the reader's language, and in German use the agreed words: a wave is **ein
+Lauf** and one supervisor run is **ein Tick**. Never "Welle", never the English
+word inside a German sentence. A report that says "der Lauf ist abgeschlossen" is
+read the same way by everyone; "die Wave" is read as jargon and "Welle" as a
+translation nobody chose.
+
 **The delivery channel gets what needs a person — and what that means is
 configured, not judged.** Ask the tool before writing to the channel:
 
