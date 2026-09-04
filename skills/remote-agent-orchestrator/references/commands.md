@@ -78,6 +78,14 @@ dispatch.
    only when the recorded id names nothing. Persist the id with `wave enable`
    either way.
 
+   The job's prompt holds the facts of this wave — project key, repository, worker
+   host, each dispatched agent's session and worktree, the authorized scope, the
+   coordinator identity, the finding that authorizes the merge — and one
+   instruction: run the supervisor tick from `remote-agent-orchestrator`. Do not
+   paraphrase the tick, the write-set rule or the reporting policy into it. The
+   skill states them, and the next sync corrects them there; a copy in the prompt
+   outlives every correction.
+
    Two supervisors for one project is a blocker, not something to tidy up: they
    tick against the same wave, both believe they are in charge, and the second one
    is evidence that a stop or close left something behind. Report it with both job
@@ -126,6 +134,10 @@ Check the supervisor itself, not merely its recorded id: ask the scheduler wheth
 that job exists, is enabled and has a next run due. An active wave without a live
 supervisor is a blocker — locks stop being renewed, a finished worker goes
 unnoticed, and the wave never closes. Report it and name the job id.
+
+Read the job's prompt back too. If it restates rules instead of naming the wave,
+report that: those rules were frozen when the job was created and will not follow
+the skill. Replacing the prompt is the fix, and it needs no new job.
 
 ## Supervisor tick
 
