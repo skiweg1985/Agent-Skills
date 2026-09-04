@@ -77,6 +77,23 @@ A missing registry entry, an unreachable host, or a worktree the worker cannot
 write in is a hard stop for that issue:
 do not dispatch, release its lock, report it. Never substitute another agent.
 
+## `WAVE NOTIFY [project] <level>`
+
+Change what reaches the delivery channel without touching the tracker record.
+
+```bash
+python3 "$ORCH" notify show --project <key>          # effective level and its source
+python3 "$ORCH" notify set --level blocker           # host default
+python3 "$ORCH" notify set --project <key> --level progress
+python3 "$ORCH" notify set --project <key> --wave --level progress   # this wave only
+python3 "$ORCH" notify set --quiet-hours 22:00-07:00 # host-wide; "none" removes it
+```
+
+Levels are a subscription, not a volume dial: `blocker` ⊂ `milestone` ⊂ `progress`.
+Quiet hours are a host setting and let only blockers through; the rest is held and
+summarised afterwards. Report the effective level and where it came from, so the
+user can see whether a wave override is still in force.
+
 ## `WAVE STATUS [project]`
 
 Read-only. With no argument, list every known project, its wave state, registered
@@ -133,8 +150,11 @@ Each scheduled run supervises; it does not widen the wave.
 A tick whose snapshot reports `changed: false` and that took no action has nothing
 to report: say nothing, anywhere. That is the whole purpose of storing one.
 
-Post each material finding to the issue in the tracker as the coordinator. Send
-to the delivery channel only what a person must act on — a decision, an approval,
+Post each material finding to the issue in the tracker as the coordinator. Before
+writing anything to the delivery channel, ask `notify decide --class …` and follow
+its answer: deliver, or hold it with `notify hold` and say nothing. On the first
+run after quiet hours end, call `notify flush` and send the held notices as one
+message. Send to the delivery channel only what a person must act on — a decision, an approval,
 an unclearable blocker, a finished wave. Never the same paragraph to both. A tick
 that found nothing material posts nothing anywhere.
 

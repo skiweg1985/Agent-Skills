@@ -21,7 +21,7 @@ import re
 import sys
 import tempfile
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 
 ROLE_NAMES = ("coordinator", "support", "frontend", "backendSecurity", "review")
@@ -181,6 +181,59 @@ def parse_bindings(values: list[str]) -> dict[str, str]:
             raise Problem("agent identifier must be a non-secret local identifier")
         bindings[role] = agent
     return bindings
+
+
+# What reaches the delivery channel. A subscription, not a volume dial: each level
+# includes the ones above it, so the question is always "is this urgent enough to
+# reach a person right now", never "how chatty should I be".
+NOTICE_LEVELS = ("blocker", "milestone", "progress")
+DEFAULT_LEVEL = "milestone"
+QUIET_RE = re.compile(r"^([01]\d|2[0-3]):([0-5]\d)-([01]\d|2[0-3]):([0-5]\d)$")
+
+
+def notify_path(config: Path) -> Path:
+    return config / "notify.json"
+
+
+def load_notify(config: Path) -> dict:
+    return read_json(notify_path(config), default={}, what="notification policy") or {}
+
+
+def in_quiet_hours(window: str | None, when: datetime | None = None) -> bool:
+    if not window:
+        return False
+    match = QUIET_RE.match(window)
+    if not match:
+        raise Problem(f"quiet hours must look like 22:00-07:00, got {window!r}")
+    start_h, start_m, end_h, end_m = (int(g) for g in match.groups())
+    now = (when or datetime.now()).time()
+    start, end = time(start_h, start_m), time(end_h, end_m)
+    if start <= end:
+        return start <= now < end
+    return now >= start or now < end  # window crosses midnight
+
+
+def effective_policy(config: Path, state: Path, project: str | None) -> dict:
+    """Wave beats project beats host default. Report where each value came from."""
+    host = load_notify(config)
+    level, source = host.get("level", DEFAULT_LEVEL), "host" if host.get("level") else "default"
+    if project:
+        folder = project_dir(state, project)
+        profile = read_json(folder / "profile.json", default={}, what="project profile") or {}
+        if profile.get("notifyLevel"):
+            level, source = profile["notifyLevel"], "project"
+        wave = read_json(folder / "wave.json", default={}, what="wave state") or {}
+        if wave.get("notifyLevel"):
+            level, source = wave["notifyLevel"], "wave"
+    if level not in NOTICE_LEVELS:
+        raise Problem(f"unknown notification level {level!r}; use one of {', '.join(NOTICE_LEVELS)}")
+    quiet = host.get("quietHours")
+    return {
+        "level": level,
+        "levelFrom": source,
+        "quietHours": quiet,
+        "inQuietHours": in_quiet_hours(quiet),
+    }
 
 
 # --- projects -------------------------------------------------------------
@@ -604,6 +657,86 @@ def cmd_status(args: argparse.Namespace) -> dict:
     return result
 
 
+def cmd_notify_show(args: argparse.Namespace) -> dict:
+    config, state = config_root(args.config_root), state_root(args.state_root)
+    policy = effective_policy(config, state, args.project)
+    policy["project"] = args.project
+    policy["held"] = len(read_json(state / "pending-notices.json", default=[], what="held notices") or [])
+    return policy
+
+
+def cmd_notify_set(args: argparse.Namespace) -> dict:
+    config, state = config_root(args.config_root), state_root(args.state_root)
+    if args.level and args.level not in NOTICE_LEVELS:
+        raise Problem(f"level must be one of {', '.join(NOTICE_LEVELS)}")
+    if args.project:
+        if args.quiet_hours is not None:
+            raise Problem("quiet hours are a host setting; omit --project")
+        folder = require_project(state, args.project)
+        target = "wave" if args.wave else "project"
+        path = folder / ("wave.json" if args.wave else "profile.json")
+        record = read_json(path, default={}, what=f"{target} state") or {}
+        if args.level:
+            record["notifyLevel"] = args.level
+        elif args.clear:
+            record.pop("notifyLevel", None)
+        atomic_json(path, record)
+    else:
+        record = load_notify(config)
+        if args.level:
+            record["level"] = args.level
+        if args.quiet_hours is not None:
+            if args.quiet_hours.lower() in ("none", "off", ""):
+                record.pop("quietHours", None)
+            else:
+                in_quiet_hours(args.quiet_hours)  # validates the format
+                record["quietHours"] = args.quiet_hours
+        if args.clear and not args.level:
+            record.pop("level", None)
+        record["schemaVersion"] = 1
+        record["updatedAt"] = stamp()
+        atomic_json(notify_path(config), record)
+    return effective_policy(config, state, args.project)
+
+
+def cmd_notify_decide(args: argparse.Namespace) -> dict:
+    """Answer whether this notice reaches the channel now, so nobody has to judge."""
+    config, state = config_root(args.config_root), state_root(args.state_root)
+    policy = effective_policy(config, state, args.project)
+    if args.notice_class not in NOTICE_LEVELS:
+        raise Problem(f"class must be one of {', '.join(NOTICE_LEVELS)}")
+    subscribed = NOTICE_LEVELS.index(args.notice_class) <= NOTICE_LEVELS.index(policy["level"])
+    if not subscribed:
+        return {**policy, "class": args.notice_class, "deliver": False, "hold": False,
+                "reason": f"level {policy['level']} does not include {args.notice_class}"}
+    if policy["inQuietHours"] and args.notice_class != "blocker":
+        return {**policy, "class": args.notice_class, "deliver": False, "hold": True,
+                "reason": "inside quiet hours; hold it and deliver the summary afterwards"}
+    return {**policy, "class": args.notice_class, "deliver": True, "hold": False,
+            "reason": "subscribed and outside quiet hours"}
+
+
+def cmd_notify_hold(args: argparse.Namespace) -> dict:
+    """Park a notice suppressed by quiet hours. Held, never dropped."""
+    state = state_root(args.state_root)
+    path = state / "pending-notices.json"
+    held = read_json(path, default=[], what="held notices") or []
+    held.append({"at": stamp(), "class": args.notice_class,
+                 "project": args.project, "text": args.text})
+    atomic_json(path, held)
+    return {"held": len(held)}
+
+
+def cmd_notify_flush(args: argparse.Namespace) -> dict:
+    """Return everything held and clear the store, for one summary message."""
+    state = state_root(args.state_root)
+    path = state / "pending-notices.json"
+    held = read_json(path, default=[], what="held notices") or []
+    if held:
+        atomic_json(path, [])
+    return {"flushed": len(held), "notices": held}
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="orchestratorctl")
     parser.add_argument("--config-root")
@@ -670,6 +803,29 @@ def build_parser() -> argparse.ArgumentParser:
     snapshot.add_argument("--input", required=True)
     snapshot.add_argument("--summary", default="")
     snapshot.set_defaults(func=cmd_snapshot)
+
+    notify = subs.add_parser("notify").add_subparsers(dest="notify_command", required=True)
+    show = notify.add_parser("show")
+    show.add_argument("--project")
+    show.set_defaults(func=cmd_notify_show)
+    setter = notify.add_parser("set")
+    setter.add_argument("--project")
+    setter.add_argument("--wave", action="store_true", help="apply to the active wave only")
+    setter.add_argument("--level", choices=NOTICE_LEVELS)
+    setter.add_argument("--quiet-hours", metavar="HH:MM-HH:MM")
+    setter.add_argument("--clear", action="store_true")
+    setter.set_defaults(func=cmd_notify_set)
+    decide = notify.add_parser("decide")
+    decide.add_argument("--class", dest="notice_class", required=True, choices=NOTICE_LEVELS)
+    decide.add_argument("--project")
+    decide.set_defaults(func=cmd_notify_decide)
+    hold = notify.add_parser("hold")
+    hold.add_argument("--class", dest="notice_class", required=True, choices=NOTICE_LEVELS)
+    hold.add_argument("--project")
+    hold.add_argument("--text", required=True)
+    hold.set_defaults(func=cmd_notify_hold)
+    flush = notify.add_parser("flush")
+    flush.set_defaults(func=cmd_notify_flush)
 
     status = subs.add_parser("status")
     status.add_argument("--project")
