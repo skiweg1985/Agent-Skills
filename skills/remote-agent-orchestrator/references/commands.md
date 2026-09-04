@@ -56,7 +56,12 @@ dispatch.
 1. Refresh every source again. `SETUP` and `INIT` data are not proof.
 2. Resolve the scope against the tracker and record it. An issue outside the scope
    is never dispatched, whatever its state.
-3. Run a fresh preflight on each candidate's **actual execution host**. Record only
+3. Run a fresh preflight on each candidate's **actual execution host**, from the
+   same kind of shell the work will run in. Confirm three things, not one: the
+   agent CLI answers, the worker can write inside its worktree, and it can reach
+   the network. A sandbox derived from the repository rather than the worktree
+   makes writes block silently and removes the network, so an agent that passes a
+   reachability check can still be unable to test or push. Record only
    secrets-free evidence. Ask the user only about a real access, approval or
    assignment gap; when nobody is present, the question goes into the report.
 4. Select issues that are unblocked, have an accountable owner, declare a write
@@ -68,7 +73,8 @@ dispatch.
    Verify both independently — the worker saying so is not evidence.
 7. Create one temporary supervisor cron job and persist its id with `wave enable`.
 
-A missing registry entry or an unreachable host is a hard stop for that issue:
+A missing registry entry, an unreachable host, or a worktree the worker cannot
+write in is a hard stop for that issue:
 do not dispatch, release its lock, report it. Never substitute another agent.
 
 ## `WAVE STATUS [project]`
@@ -86,7 +92,9 @@ Each scheduled run supervises; it does not widen the wave.
 
 1. Refresh state and check liveness on each worker host over SSH.
 2. Renew the lease of every worker confirmed to be still running. Leave the rest
-   to expire, and record that they did.
+   to expire, and record that they did. A live process is not progress: when a
+   worker has run far longer than the work should take with no new commit, report
+   that as a diagnosis instead of renewing forever.
 3. For finished work — pull request open, process ended — request review from an
    agent other than the implementer.
 4. For reviewed work, check the diff against the declared write set, then merge.
