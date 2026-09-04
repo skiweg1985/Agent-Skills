@@ -220,7 +220,12 @@ worker. `WAVE STATUS` therefore checks the recorded job against the scheduler an
 reports a missing or paused supervisor as a blocker, not as a detail. Storing the
 id is bookkeeping; verifying it is supervision.
 
-`WAVE STOP` removes future scheduling and preserves workers, worktrees and locks.
+`WAVE STOP` stops future scheduling and preserves workers, worktrees and locks. It
+**keeps the scheduler job id** and reports any lock still held: the scheduler entry
+outlives the wave record, so discarding the id leaves a supervisor that still runs
+and that nobody can name, and a held lock without a supervisor is a lease nothing
+renews and a finished worker nobody notices. Removing the scheduler job is a
+separate, deliberate act.
 `WAVE CLOSE` removes the job after live verification that no worker, queued action
 or open review remains. A wave whose scope is exhausted closes itself.
 

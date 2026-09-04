@@ -120,8 +120,16 @@ Stop future scheduling and call `wave disable`. Preserve workers, worktrees, loc
 and evidence. Never kill a worker or delete a worktree without a separate explicit
 instruction.
 
+`wave disable` keeps the scheduler job id and names it back to you, because
+disabling the wave does not stop the job — remove it deliberately, or it keeps
+ticking against a wave that no longer exists. It also reports every lock still
+held. Stopping with locks open is legitimate, but from that moment nothing renews
+their leases and nothing notices when the work finishes; say so in the report
+rather than leaving it to be discovered.
+
 ## `WAVE CLOSE <project>`
 
-After verifying live that no worker, queued action or open review remains: remove
-the cron job, release completed locks, keep the local profile and ledger, and
-report the final evidence.
+After verifying live that no worker, queued action or open review remains:
+**release completed locks first, then remove the cron job**, keep the local
+profile and ledger, and report the final evidence. In that order — a lock left
+behind after the supervisor is gone has nobody to clean it up.

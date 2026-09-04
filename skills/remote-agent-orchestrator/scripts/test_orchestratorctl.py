@@ -241,6 +241,40 @@ class Waves(Base):
         self.assertFalse(disabled["enabled"])
         self.assertEqual(len(self.run_cli("lock", "list", "--project", key)["locks"]), 1)
 
+    def test_disable_keeps_the_scheduler_job_id(self) -> None:
+        """Forgetting the id leaves a supervisor that still runs and cannot be named."""
+        self.setup_host()
+        key = self.init_project()
+        self.run_cli("wave", "enable", "--project", key, "--scope", "M1",
+                     "--scope-kind", "milestone", "--cron-job-id", "job-77")
+        disabled = self.run_cli("wave", "disable", "--project", key)
+        self.assertEqual(disabled["cronJobId"], "job-77")
+        self.assertIn("job-77", disabled["nextAction"])
+        stored = json.loads(
+            (self.root / "state" / "projects" / key / "wave.json").read_text())
+        self.assertEqual(stored["cronJobId"], "job-77")
+        self.assertFalse(stored["enabled"])
+
+    def test_disable_warns_about_locks_left_unsupervised(self) -> None:
+        self.setup_host()
+        key = self.init_project()
+        self.run_cli("wave", "enable", "--project", key, "--scope", "M1",
+                     "--scope-kind", "milestone", "--cron-job-id", "job-1")
+        self.run_cli("lock", "acquire", "--project", key, "--issue", "ISS-1",
+                     "--agent", "w", "--session", "s", "--revision", "r")
+        disabled = self.run_cli("wave", "disable", "--project", key)
+        self.assertEqual(disabled["heldLocks"], ["ISS-1"])
+        self.assertIn("ISS-1", disabled["warning"])
+
+    def test_disable_without_locks_reports_none(self) -> None:
+        self.setup_host()
+        key = self.init_project()
+        self.run_cli("wave", "enable", "--project", key, "--scope", "M1",
+                     "--scope-kind", "milestone", "--cron-job-id", "job-1")
+        disabled = self.run_cli("wave", "disable", "--project", key)
+        self.assertEqual(disabled["heldLocks"], [])
+        self.assertNotIn("warning", disabled)
+
     def test_status_without_project_lists_everything_known(self) -> None:
         """A new session finds existing work without being told a project name."""
         self.setup_host()

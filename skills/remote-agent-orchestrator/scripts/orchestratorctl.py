@@ -404,10 +404,33 @@ def cmd_wave_disable(args: argparse.Namespace) -> dict:
     state = state_root(args.state_root)
     folder = require_project(state, args.project)
     wave = read_json(folder / "wave.json", default={}, what="wave state")
-    wave.update({"enabled": False, "cronJobId": None, "disabledAt": stamp()})
+    # Keep the scheduler job id. The scheduler entry outlives this record, and
+    # forgetting the id leaves a supervisor that still runs and that nobody can
+    # name any more.
+    job = wave.get("cronJobId")
+    wave.update({"enabled": False, "disabledAt": stamp()})
     atomic_json(folder / "wave.json", wave)
-    return {"project": args.project, "enabled": False,
-            "note": "future scheduling stopped; workers, worktrees and locks are preserved"}
+
+    held = [lock for lock in cmd_lock_list(args)["locks"] if not lock["expired"]]
+    result = {
+        "project": args.project,
+        "enabled": False,
+        "cronJobId": job,
+        "heldLocks": [lock["issue"] for lock in held],
+        "note": "future scheduling stopped; workers, worktrees and locks are preserved",
+    }
+    if job:
+        result["nextAction"] = (
+            f"remove scheduler job {job} yourself; disabling the wave does not stop it"
+        )
+    if held:
+        # Disabling a wave that still holds locks is legitimate, but from now on
+        # nothing renews their leases and nothing notices when the work finishes.
+        result["warning"] = (
+            f"{len(held)} lock(s) still held with no supervisor to renew or release them: "
+            + ", ".join(lock["issue"] for lock in held)
+        )
+    return result
 
 
 def read_lock(path: Path) -> dict | None:
