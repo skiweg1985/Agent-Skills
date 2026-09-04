@@ -1,6 +1,6 @@
 ---
 name: a3-cron-coordinator
-description: Explicitly opt-in, GitHub-first Cron coordinator for a non-production project delivery wave. Use only when a user or trusted coordinator explicitly says `A3 INIT`, `A3 START`, `A3 STATUS`, `A3 STOP`, or `A3 CLOSE`; never load or activate this skill merely because it is installed on a coding-agent host.
+description: Explicitly opt-in, GitHub-first Cron coordinator for a non-production project delivery wave. Use only when a user or trusted coordinator explicitly says `A3 SETUP`, `A3 INIT`, `A3 START`, `A3 STATUS`, `A3 STOP`, or `A3 CLOSE`; never load or activate this skill merely because it is installed on a coding-agent host.
 ---
 
 # A3 Cron Coordinator
@@ -12,6 +12,7 @@ This public skill is **inert by default**. Installation, repository clone, agent
 Act only after an explicit command from a user or trusted coordinator beginning with one of:
 
 ```text
+A3 SETUP [--role ROLE=AGENT …]
 A3 INIT [project]
 A3 START [project] [next N|ISSUE-KEY …]
 A3 STATUS [project]
@@ -19,21 +20,28 @@ A3 STOP [project]
 A3 CLOSE [project]
 ```
 
-A coding worker must never invoke `A3 INIT` or `A3 START` itself, create a supervisor Cron, change another project's A3 state, or dispatch another worker. A worker receives only its bounded issue prompt from an already active coordinator.
+`A3 SETUP` is an explicit local configuration request, not activation. It creates or preserves an editable local team profile and a secrets-free readiness record, then guides the user only when access, approval, or a role decision is genuinely missing. It must not start workers, create a supervisor Cron, acquire locks, or mutate GitHub/trackers.
+
+A coding worker must never invoke `A3 SETUP`, `A3 INIT`, or `A3 START` itself, create a supervisor Cron, change another project's A3 state, or dispatch another worker. A worker receives only its bounded issue prompt from an already active coordinator.
 
 ## Local-only project state
 
-The public repository holds reusable logic only. `A3 INIT` creates all project-specific state locally, never in this skill repository:
+The public repository holds reusable logic only. `A3 SETUP` stores durable, human-editable desired role bindings locally; `A3 INIT` creates project-specific state locally. Neither writes to this skill repository:
 
 ```text
-$XDG_STATE_HOME/a3-coordinator/projects/<project-slug>/
-├── profile.json       # repository/tracker metadata; no credentials
-├── team.json          # locally resolved agent-role bindings
-├── activation.json    # initialized/enabled state and Cron job ID
-└── runtime/           # locks and secrets-free snapshots
+$XDG_CONFIG_HOME/a3-coordinator/
+└── team-profile.json             # editable desired role bindings; no connection details
+
+$XDG_STATE_HOME/a3-coordinator/
+├── worker-readiness.json         # secrets-free remote-preflight evidence
+└── projects/<project-slug>/
+    ├── profile.json              # repository/tracker metadata; no credentials
+    ├── team.json                 # project-scoped roles derived from local profile
+    ├── activation.json           # initialized/enabled state and Cron job ID
+    └── runtime/                  # locks and secrets-free snapshots
 ```
 
-Default `$XDG_STATE_HOME` is `$HOME/.local/state`. Override the root only with `A3_COORDINATION_ROOT`.
+Defaults are `$HOME/.config` and `$HOME/.local/state`. Override the configuration root with `A3_CONFIG_ROOT` and the state root with `A3_COORDINATION_ROOT`.
 
 Read `references/commands.md` for the lifecycle and `references/local-team-config.md` for the local agent discovery rules.
 
@@ -58,6 +66,8 @@ Before dispatch or merge, refresh the tracker, repository, PR/CI state, active w
 ## Local helpers
 
 ```bash
+python3 scripts/a3ctl.py setup
+python3 scripts/a3ctl.py setup --role backendSecurity=agent-id
 python3 scripts/a3ctl.py init --project <slug> --repo <canonical-repository-url> --tracker <tracker-project>
 python3 scripts/a3ctl.py status --project <slug>
 python3 scripts/a3ctl.py enable --project <slug> --cron-job-id <job-id>
@@ -66,7 +76,7 @@ python3 scripts/a3_state.py --state-root "$XDG_STATE_HOME/a3-coordinator/project
   --project <slug> --issue <ISSUE> --agent <agent> --session <session> --revision <revision>
 ```
 
-`a3ctl.py init` is idempotent: it deduplicates on canonical repository URL plus tracker identity. A mismatch stops rather than overwriting another project.
+`a3ctl.py setup` is idempotent: it preserves existing local role choices and only changes a role passed explicitly through `--role`. It creates no network configuration and performs no remote call. The coordinator owns remote preflight and records only secrets-free evidence. `a3ctl.py init` is likewise idempotent: it deduplicates on canonical repository URL plus tracker identity. A mismatch stops rather than overwriting another project.
 
 ## Cron lifecycle
 

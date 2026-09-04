@@ -2,15 +2,27 @@
 
 These commands are explicit coordinator requests. They are not shell aliases and do not run automatically when the skill is installed.
 
+## `A3 SETUP [--role ROLE=AGENT …]`
+
+Create or review the local, editable coordination foundation without activating a project wave.
+
+1. Create `$XDG_CONFIG_HOME/a3-coordinator/team-profile.json` if it does not exist. Preserve every existing user choice; only update a role explicitly supplied with `--role`.
+2. Create `$XDG_STATE_HOME/a3-coordinator/worker-readiness.json` if it does not exist. This is a secrets-free record for independently observed worker readiness, not a credential store.
+3. Discover every safe fact the coordinator can inspect itself. For remote workers, verify the actual execution host before concluding that a CLI, authentication, or MCP is missing.
+4. When access, authorization, a changed SSH host key, or a responsibility decision is genuinely required, explain: what was checked, what is missing, why it matters, and the smallest action or choice needed from the user.
+5. Report the profile path, configured roles, readiness state, and next safe action.
+
+`SETUP` must not start a worker, create a worktree, acquire a lock, schedule a Cron, alter a tracker, write a repository, or create a network/credential configuration. Keep hostnames, ports, account names, tokens, and machine-specific paths in private local policy, never in the public skill or its local team profile.
+
 ## `A3 INIT [project]`
 
 Initialize exactly one project without launching coding work. With no argument, derive the project from the current Git worktree and canonical `origin` URL. Ask only if that repository maps to multiple tracker projects or the current directory is not a Git worktree.
 
 1. Read the selected repository's current working agreements and resolve its canonical repository URL, target branch, worktree convention, and whether it is non-production.
 2. Read the tracker project, candidate issues, dependencies, active assignments/comments, open GitHub PRs, CI, worktrees, and existing workers.
-3. Discover currently available agent identities from the local environment or configured tracker integrations. Do not infer a role from a display name. Create the local `team.json` scaffold and bind a role only from explicit user direction, current agent metadata, or an approved local policy.
+3. Load desired role bindings from the local team profile. Query live availability before treating a binding as usable. Do not infer a role from a display name.
 4. Run `a3ctl.py init`. If repository+tracker identity already exists, report `DEDUPED`; do not create a second profile.
-5. Save a secrets-free project profile and local team bindings. End with a report of safe candidates and write-set conflicts.
+5. Save a secrets-free project profile and project-scoped role bindings. End with a report of safe candidates and write-set conflicts.
 
 `INIT` must not create a Cron, dispatch a worker, change issue ownership, commit, push, merge, deploy, or write externally.
 
@@ -18,15 +30,16 @@ Initialize exactly one project without launching coding work. With no argument, 
 
 Only a trusted coordinator may perform this command.
 
-1. Refresh all sources again; INIT data is not proof.
-2. Select only unblocked issues with an accountable owner and non-overlapping write sets. `next N` means the safest dependency-respecting N, not simply the oldest N.
-3. Acquire a durable lock before dispatching each worker. A duplicate lock means attach to/inspect the existing run; never start another.
-4. Require one worktree per issue and an agent-authored tracker start comment; verify it independently.
-5. Create one temporary 15-minute project supervisor Cron and persist its job ID locally with `a3ctl.py enable`.
+1. Refresh all sources again; `SETUP` and `INIT` data are not proof.
+2. Run a fresh independent preflight on the actual execution host for every candidate worker. A local coordinator CLI result is not evidence about a remote worker. Record only secrets-free evidence and ask the user only for a real access, approval, or assignment gap.
+3. Select only unblocked issues with an accountable, preflight-ready owner and non-overlapping write sets. `next N` means the safest dependency-respecting N, not simply the oldest N.
+4. Acquire a durable lock before dispatching each worker. A duplicate lock means attach to/inspect the existing run; never start another.
+5. Require one worktree per issue and an agent-authored tracker start comment; verify it independently.
+6. Create one temporary 15-minute project supervisor Cron and persist its job ID locally with `a3ctl.py enable`.
 
 ## `A3 STATUS <project>`
 
-Read-only. Refresh the tracker, GitHub PR/CI status, workers, and locks; compare a secrets-free snapshot. Report only material deltas, blockers, and the next safe action.
+Read-only. Refresh the tracker, GitHub PR/CI status, actual workers, remote readiness, and locks; compare a secrets-free snapshot. Report only material deltas, blockers, and the next safe action.
 
 ## `A3 STOP <project>`
 

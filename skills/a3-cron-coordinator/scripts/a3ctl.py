@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Local, opt-in state for the public A3 coordinator skill.
+"""Local, opt-in configuration and state for the public A3 coordinator skill.
 
-This tool never creates Cron jobs or starts agents. It only creates and records
-local project activation metadata; the coordinator performs external actions.
+This helper never creates Cron jobs, connects to workers, or starts agents. It
+only creates and records local, secrets-free configuration/state. A coordinator
+performs any remote readiness checks and external actions.
 """
 from __future__ import annotations
 
@@ -15,6 +16,8 @@ import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
+ROLE_NAMES = ("coordinator", "support", "frontend", "backendSecurity", "review")
+
 
 def now() -> str:
     return datetime.now(UTC).isoformat()
@@ -22,7 +25,20 @@ def now() -> str:
 
 def state_root(value: str | None) -> Path:
     base = value or os.environ.get("A3_COORDINATION_ROOT")
-    return Path(base or Path(os.environ.get("XDG_STATE_HOME", "~/.local/state")).expanduser() / "a3-coordinator").expanduser()
+    return Path(
+        base
+        or Path(os.environ.get("XDG_STATE_HOME", "~/.local/state")).expanduser()
+        / "a3-coordinator"
+    ).expanduser()
+
+
+def config_root(value: str | None) -> Path:
+    base = value or os.environ.get("A3_CONFIG_ROOT")
+    return Path(
+        base
+        or Path(os.environ.get("XDG_CONFIG_HOME", "~/.config")).expanduser()
+        / "a3-coordinator"
+    ).expanduser()
 
 
 def safe_slug(value: str) -> str:
@@ -48,8 +64,112 @@ def read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def blank_roles() -> dict[str, str | None]:
+    return {role: None for role in ROLE_NAMES}
+
+
+def team_profile_path(args: argparse.Namespace) -> Path:
+    return config_root(args.config_root) / "team-profile.json"
+
+
+def readiness_path(args: argparse.Namespace) -> Path:
+    return state_root(args.state_root) / "worker-readiness.json"
+
+
+def default_team_profile() -> dict:
+    return {
+        "schemaVersion": 1,
+        "configuredAt": now(),
+        "roles": blank_roles(),
+        "notes": (
+            "Local desired role bindings only. Keep hosts, credentials, tokens, "
+            "and machine-specific connection details in private policy, not here."
+        ),
+    }
+
+
+def default_readiness() -> dict:
+    return {
+        "schemaVersion": 1,
+        "observedAt": None,
+        "workers": {},
+        "notes": (
+            "A coordinator records only secrets-free remote readiness evidence here. "
+            "A3 START requires a fresh independent remote preflight."
+        ),
+    }
+
+
+def parse_role_bindings(values: list[str]) -> dict[str, str]:
+    bindings: dict[str, str] = {}
+    for value in values:
+        role, separator, agent = value.partition("=")
+        if not separator or role not in ROLE_NAMES:
+            raise ValueError(
+                "--role must be ROLE=AGENT; ROLE is one of " + ", ".join(ROLE_NAMES)
+            )
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}", agent):
+            raise ValueError("agent identifier must be a non-secret local identifier")
+        bindings[role] = agent
+    return bindings
+
+
+def local_roles(args: argparse.Namespace) -> dict[str, str | None]:
+    path = team_profile_path(args)
+    if not path.exists():
+        return blank_roles()
+    profile = read_json(path)
+    stored = profile.get("roles", {})
+    if not isinstance(stored, dict):
+        raise ValueError("team profile roles must be an object")
+    roles = blank_roles()
+    for role in ROLE_NAMES:
+        value = stored.get(role)
+        if value is not None and not isinstance(value, str):
+            raise ValueError(f"team profile role '{role}' must be a string or null")
+        roles[role] = value
+    return roles
+
+
 def folder(args: argparse.Namespace) -> Path:
     return state_root(args.state_root) / "projects" / safe_slug(args.project)
+
+
+def cmd_setup(args: argparse.Namespace) -> int:
+    profile_path = team_profile_path(args)
+    readiness = readiness_path(args)
+    created_profile = not profile_path.exists()
+    profile = default_team_profile() if created_profile else read_json(profile_path)
+    profile_changed = created_profile
+    if not isinstance(profile.get("roles"), dict):
+        raise ValueError("existing team profile roles must be an object")
+    for role in ROLE_NAMES:
+        if role not in profile["roles"]:
+            profile["roles"][role] = None
+            profile_changed = True
+    bindings = parse_role_bindings(args.role)
+    if bindings:
+        profile["roles"].update(bindings)
+        profile["updatedAt"] = now()
+        profile_changed = True
+    if profile_changed:
+        atomic_json(profile_path, profile)
+    created_readiness = not readiness.exists()
+    if created_readiness:
+        atomic_json(readiness, default_readiness())
+    print(json.dumps({
+        "configured": True,
+        "teamProfileCreated": created_profile,
+        "readinessCreated": created_readiness,
+        "teamProfilePath": str(profile_path),
+        "readinessPath": str(readiness),
+        "roles": local_roles(args),
+        "nextAction": (
+            "Run a fresh, independent remote worker preflight before A3 INIT or A3 START; "
+            "ask the user only for missing access, approval, or a role decision."
+        ),
+    }, ensure_ascii=False))
+    return 0
 
 
 def cmd_init(args: argparse.Namespace) -> int:
@@ -73,11 +193,12 @@ def cmd_init(args: argparse.Namespace) -> int:
         "targetBranch": args.target_branch,
         "initializedAt": now(),
     })
+    roles = local_roles(args)
     atomic_json(root / "team.json", {
         "schemaVersion": 1,
         "project": project,
-        "resolvedAt": None,
-        "roles": {"coordinator": None, "support": None, "frontend": None, "backendSecurity": None, "review": None},
+        "resolvedAt": now() if any(roles.values()) else None,
+        "roles": roles,
     })
     atomic_json(root / "activation.json", {
         "schemaVersion": 1,
@@ -117,6 +238,8 @@ def cmd_status(args: argparse.Namespace) -> int:
     for name in ("profile.json", "team.json", "activation.json"):
         path = root / name
         result[name.removesuffix(".json")] = read_json(path) if path.exists() else None
+    readiness = readiness_path(args)
+    result["workerReadiness"] = read_json(readiness) if readiness.exists() else None
     print(json.dumps(result, ensure_ascii=False))
     return 0
 
@@ -124,7 +247,11 @@ def cmd_status(args: argparse.Namespace) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--state-root")
+    parser.add_argument("--config-root")
     subs = parser.add_subparsers(dest="command", required=True)
+    setup = subs.add_parser("setup")
+    setup.add_argument("--role", action="append", default=[], metavar="ROLE=AGENT")
+    setup.set_defaults(func=cmd_setup)
     init = subs.add_parser("init")
     init.add_argument("--project", required=True)
     init.add_argument("--repo", required=True)
