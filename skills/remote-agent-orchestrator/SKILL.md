@@ -212,6 +212,14 @@ its id through `wave enable`. Use a cron job rather than a background session: a
 background task dies with the host process while remote workers keep running for
 hours, and nobody notices.
 
+**A recorded supervisor is not a running one.** `wave.json` holds the scheduler's
+job id; that the job still exists, is enabled and is due is a separate fact. A wave
+whose supervisor was paused, disabled or deleted keeps its locks and believes it is
+watched while nobody renews a lease, evaluates a review or notices a finished
+worker. `WAVE STATUS` therefore checks the recorded job against the scheduler and
+reports a missing or paused supervisor as a blocker, not as a detail. Storing the
+id is bookkeeping; verifying it is supervision.
+
 `WAVE STOP` removes future scheduling and preserves workers, worktrees and locks.
 `WAVE CLOSE` removes the job after live verification that no worker, queued action
 or open review remains. A wave whose scope is exhausted closes itself.
@@ -220,3 +228,27 @@ Before any dispatch or merge, refresh the tracker, repository, pull request and 
 state, worktrees and locks. A repeated wake must attach to an existing run rather
 than dispatch the same issue twice. Never treat a worker's claim as evidence:
 stdout is diagnostics, and only the pull request and the tracker comment count.
+
+## Reporting
+
+Two audiences, two different messages. Sending the same paragraph to both is noise
+that trains everyone to ignore one of them.
+
+**The tracker gets the record.** Write material findings onto the issue whose wave
+is being supervised: work finished, a review requested or returned, a lease
+expired, a supervisor found missing, a blocker, a wave closed. That is where the
+next agent, the next session and the reviewer look, and it outlives every chat.
+Post as the coordinator in its own voice, and never phrase a worker's action as
+your own — say that the coordinator verified, renewed or blocked something.
+Follow the tracker skill's comment conventions: natural sentences, no key-value
+scaffolding, the session identifier as the single trailing line.
+
+**The delivery channel gets what needs a person.** A decision, an approval, a
+blocker nobody else can clear, a finished wave. Not progress a human cannot act
+on: "the worker is still running" belongs in the tracker at most, and usually
+nowhere. If a message would tell the reader nothing they must do, it does not
+belong in the channel.
+
+A tick that found nothing material writes nothing anywhere. The scheduler's own
+run log is not a report and needs no consideration; the local secrets-free ledger
+stays the orchestrator's memory for snapshot comparison, not a third audience.
