@@ -11,6 +11,34 @@ Shared, public [Agent Skills](https://agentskills.io/) for autonomous coding age
 - `schreibstil-pruefen` — review and improve German technical writing against repository conventions and a measured fallback style guide.
 - `skill-repository-sync` — safely update a deployed clone of this repository through an externally installed updater.
 
+## Skills published for the Hermes tap
+
+`skills/` is a second distribution surface, not a stray directory. Hermes registers
+this repository as a tap and indexes exactly that path:
+
+```bash
+hermes skills tap add skiweg1985/Agent-Skills
+```
+
+A skill placed in `skills/<skill-name>/` is discoverable through that tap and is
+deliberately **not** discovered by Codex or Claude Code, which only read the top
+level. Currently published this way: `a3-cron-coordinator`.
+
+Three consequences worth knowing:
+
+- Hermes installs the complete bundle — `SKILL.md` plus `scripts/`, `references/`,
+  and `templates/`. Keep such a skill self-contained; do not install it from a raw
+  `SKILL.md` URL, which fetches that one file and silently drops the rest.
+- A tap reads the repository's default branch, so a change becomes tap-visible only
+  after it lands on `main`.
+- The updater validates `skills/*/SKILL.md` with the same rules as the top level but
+  never deploys it to `~/.agents/skills`. Validation and discovery are separate on
+  purpose: a broken skill here cannot ship to Hermes unnoticed, and a Hermes-only
+  skill does not appear in the other agents.
+
+Put a skill at the top level when the agents on a host should load it, and under
+`skills/` when it is meant for the tap.
+
 ## Skills installed from upstream
 
 This repository stores only its own skills. Third-party collections are declared in
