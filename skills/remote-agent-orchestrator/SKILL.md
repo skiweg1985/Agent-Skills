@@ -111,6 +111,42 @@ The lease is a liveness signal, not a timeout:
 Renew only what you confirmed independently. An unrenewed lease expires, and the
 next acquisition records the holder it superseded.
 
+## Dispatch
+
+Reach each worker through its registry entry: transport, host, user, working
+directory, and an **explicit invocation template**. Agent CLIs differ in how they
+take a one-shot prompt, so a template is required and never inferred from a name.
+No credentials live there; public-key authentication is provisioned on the hosts
+and only verified. See `references/agent-registry.md`.
+
+**Run the template verbatim.** Substitute `{prompt}` and change nothing else: do
+not shorten a path to a bare command name, do not add flags, do not reorder
+arguments. The template carries absolute paths because a non-interactive shell has
+a minimal `PATH` and will not find an agent installed under a home directory. It
+omits sandbox and approval flags deliberately, because such a flag can silently
+restrict where the worker may write and cut its network — turning a working setup
+into a run that hangs or cannot push. A command assembled at dispatch time looks
+equivalent and is not; if the template is wrong, correct the registry so the fix
+holds for every later dispatch.
+
+**Reachability is not capability.** An agent CLI that answers is not yet an agent
+that can work. Before dispatch, confirm on the execution host, from the same kind
+of shell the work will run in, that the worker can **write inside its worktree**
+and **reach the network**:
+
+```bash
+touch <worktree>/.probe && rm <worktree>/.probe
+git -C <worktree> ls-remote origin >/dev/null
+```
+
+A sandbox whose writable area is derived from the repository rather than the
+worktree does not fail loudly: a start-up write blocks, and the run hangs at zero
+CPU looking like a deadlock in the code. Without network, work can be committed
+but never pushed, which from outside looks like an agent that stopped for no
+reason. Both checks are two commands; skipping them costs an hour of a worker
+repeating something that cannot succeed. A worktree the worker cannot write in is
+a hard stop for that issue — report it, do not substitute another agent.
+
 ## Work, review, merge
 
 A **write set is declared on the issue** before it is dispatchable; an issue

@@ -47,6 +47,15 @@ break in.
 in how they take a one-shot prompt, and guessing one from an agent's name is the
 kind of inference this skill forbids everywhere else.
 
+**Use it verbatim at dispatch: substitute `{prompt}`, change nothing else.** Two
+failures follow from editing it, and both are quiet. A bare command name instead
+of the absolute path fails because a non-interactive shell carries a minimal
+`PATH` and will not find an agent installed under a home directory. An added
+sandbox or approval flag can restrict the writable area to the repository rather
+than the worktree and unshare the network, so start-up writes block, tests hang at
+zero CPU, and finished work cannot be pushed. Record the working command in the
+registry and let every dispatch read it from there.
+
 Everything else about reaching a host — a jump host, a port policy, an SSH config
 alias — belongs in the host's own SSH configuration, referenced by name, not
 copied here.
