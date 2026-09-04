@@ -109,9 +109,10 @@ Each scheduled run supervises; it does not widen the wave.
 6. When the scope holds no unfinished work, close the wave: remove the cron job,
    release completed locks, write the final report.
 
-Post each material finding to the issue in the tracker as the coordinator, in
-addition to whatever channel the schedule delivers to. A tick that found nothing
-new posts nothing.
+Post each material finding to the issue in the tracker as the coordinator. Send
+to the delivery channel only what a person must act on — a decision, an approval,
+an unclearable blocker, a finished wave. Never the same paragraph to both. A tick
+that found nothing material posts nothing anywhere.
 
 ## `WAVE STOP <project>`
 

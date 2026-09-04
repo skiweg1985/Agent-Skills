@@ -231,19 +231,24 @@ stdout is diagnostics, and only the pull request and the tracker comment count.
 
 ## Reporting
 
-Write findings **into the tracker**, on the issue whose wave is being supervised —
-not only into the channel the schedule happens to deliver to. A delivery channel
-reaches one person now; the tracker is where the next agent, the next session and
-the reviewer look. A supervisor reporting only to a chat leaves no trace where the
-work lives.
+Two audiences, two different messages. Sending the same paragraph to both is noise
+that trains everyone to ignore one of them.
 
-Post as the coordinator, in its own voice, and never blur who acted: say that the
-coordinator verified, renewed or blocked something, and never phrase a worker's
-action as your own. Follow the tracker skill's comment conventions — natural
-sentences, no key-value scaffolding, the session identifier as the single trailing
-line.
+**The tracker gets the record.** Write material findings onto the issue whose wave
+is being supervised: work finished, a review requested or returned, a lease
+expired, a supervisor found missing, a blocker, a wave closed. That is where the
+next agent, the next session and the reviewer look, and it outlives every chat.
+Post as the coordinator in its own voice, and never phrase a worker's action as
+your own — say that the coordinator verified, renewed or blocked something.
+Follow the tracker skill's comment conventions: natural sentences, no key-value
+scaffolding, the session identifier as the single trailing line.
 
-Report a material delta, not a heartbeat: work finished, a review requested or
-returned, a lease expired, a supervisor found missing, a blocker, a wave closed. A
-tick that found nothing new writes nothing. The local secrets-free ledger stays the
-orchestrator's own memory for snapshot comparison, not a third audience.
+**The delivery channel gets what needs a person.** A decision, an approval, a
+blocker nobody else can clear, a finished wave. Not progress a human cannot act
+on: "the worker is still running" belongs in the tracker at most, and usually
+nowhere. If a message would tell the reader nothing they must do, it does not
+belong in the channel.
+
+A tick that found nothing material writes nothing anywhere. The scheduler's own
+run log is not a report and needs no consideration; the local secrets-free ledger
+stays the orchestrator's memory for snapshot comparison, not a third audience.
