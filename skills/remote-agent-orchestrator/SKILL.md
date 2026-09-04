@@ -161,9 +161,24 @@ a hard stop for that issue — report it, do not substitute another agent.
 
 A **write set is declared on the issue** before it is dispatchable; an issue
 without one is not dispatched. Check the diff against that declaration at pull
-request time. Exceeding it is a hard merge stop: leave the pull request open, keep
-the lock, report the issue as blocked. Never trim the diff or widen the
-declaration afterwards.
+request time, and **grade what you find** — the rule exists to keep two workers
+out of the same files, so weigh the breach against that risk rather than against
+the letter:
+
+- The extra files overlap **another active worker's declared write set** — hard
+  stop. Leave the pull request open, keep the lock, report the issue as blocked.
+  This is the collision the rule exists for.
+- The extra files overlap **nothing**, and the published review covers them —
+  record the deviation on the issue, correct its declared write set for the
+  record, and merge. Nothing unreviewed and nothing colliding gets in, which is
+  the whole protection; holding finished, reviewed, green work over a file nobody
+  else touches buys no safety and costs a person their evening.
+
+Never trim the diff or silently widen the declaration. A recorded deviation is
+visible; an edited claim is not.
+
+A human may grant an explicit exception for a specific breach. It is recorded on
+the issue, applies to that one merge, and is never reused as standing permission.
 
 Run **as many workers as there are issues with disjoint write sets**, under the
 project's `maxWorkers` cap. The cap is an emergency brake, not the steering.
