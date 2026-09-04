@@ -247,7 +247,24 @@ def main() -> int:
         for entry in target.iterdir()
         if entry.is_dir() and not entry.name.startswith(".")
     }
-    foreign = sorted(name for name, mark in present.items() if mark is None)
+    # Skills installed before markers existed carry none. The previous status
+    # record names them, so adopt those rather than mistaking our own earlier
+    # work for someone else's and refusing to touch it ever again.
+    previously_installed = set()
+    if status_path.exists():
+        try:
+            record = json.loads(status_path.read_text(encoding="utf-8"))
+            previously_installed = {n for n in record.get("skills", []) if isinstance(n, str)}
+        except json.JSONDecodeError:
+            previously_installed = set()
+    adopted = sorted(
+        name for name, mark in present.items()
+        if mark is None and name in previously_installed
+    )
+    foreign = sorted(
+        name for name, mark in present.items()
+        if mark is None and name not in previously_installed
+    )
     conflicts = sorted(name for name in chosen if name in foreign)
 
     prepared: dict[str, tuple[Path, str, dict[str, str]]] = {}
@@ -306,6 +323,7 @@ def main() -> int:
         "skills": sorted(installed),
         "removed": removed,
         "unmanaged": foreign,
+        "adopted": adopted,
         "conflicts": conflicts,
         "sources": [
             {"id": sid, "revision": manifest["_sources"][sid]["revision"],
@@ -318,6 +336,8 @@ def main() -> int:
     print(f"Installed {len(installed)} skills for role(s) {' '.join(roles)} into {target}.")
     if removed:
         print(f"Removed {len(removed)} no longer selected: {', '.join(removed)}.")
+    if adopted:
+        print(f"Adopted {len(adopted)} skill(s) installed before markers existed.")
     if foreign:
         print(f"Left {len(foreign)} skill(s) not managed here untouched: {', '.join(foreign)}.")
     for name in conflicts:
