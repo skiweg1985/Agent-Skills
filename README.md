@@ -52,6 +52,7 @@ Every host declares roles. The updater installs the intersection.
 | `base` | `agent-host-operations`, `linear-coordinate-agents`, `skill-repository-sync`, `documentation-standards`, `schreibstil-pruefen` |
 | `coordinator` | the orchestrator and `cost-aware-agent-routing` |
 | `worker` | the skills installed from [`mattpocock/skills`](https://github.com/mattpocock/skills) |
+| `maintainer` | `improve-remote-orchestration` — turning real runs into skill changes |
 
 `linear-coordinate-agents` is in `base` rather than `coordinator`: most of it
 addresses the agent doing the work — claiming an issue, commit attribution,

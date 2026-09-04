@@ -3,7 +3,8 @@
   "roles": {
     "base": "Installed on every host regardless of what it does.",
     "coordinator": "Orchestrates remote coding agents. Never implements.",
-    "worker": "Implements, reviews and validates code."
+    "worker": "Implements, reviews and validates code.",
+    "maintainer": "Develops and corrects the shared skills from real runs."
   },
   "defaultRoles": [
     "base"
@@ -120,6 +121,12 @@
         "worker"
       ],
       "source": "mattpocock-skills"
+    },
+    "improve-remote-orchestration": {
+      "groups": [
+        "maintainer"
+      ],
+      "source": "local"
     },
     "linear-coordinate-agents": {
       "groups": [
