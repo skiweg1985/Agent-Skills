@@ -583,14 +583,25 @@ def cmd_status(args: argparse.Namespace) -> dict:
             state / "worker-readiness.json", what="worker readiness")
         return overview
     folder = require_project(state, args.project)
-    return {
+    wave = read_json(folder / "wave.json", what="wave state") or {}
+    snapshot = read_json(folder / "snapshot.json", what="snapshot")
+    result = {
         "project": args.project,
         "profile": read_json(folder / "profile.json", what="project profile"),
         "team": read_json(folder / "team.json", what="team bindings"),
-        "wave": read_json(folder / "wave.json", what="wave state"),
-        "snapshot": read_json(folder / "snapshot.json", what="snapshot"),
+        "wave": wave,
+        "snapshot": snapshot,
         "locks": cmd_lock_list(args)["locks"],
     }
+    # Reporting only material changes means comparing against a stored state. An
+    # active wave without one cannot do that and will restate everything it sees,
+    # so say so rather than letting the omission stay quiet.
+    if wave.get("enabled") and snapshot is None:
+        result["warning"] = (
+            "no snapshot stored for this wave: nothing to compare against, so every "
+            "report will restate the full state instead of the delta"
+        )
+    return result
 
 
 def build_parser() -> argparse.ArgumentParser:

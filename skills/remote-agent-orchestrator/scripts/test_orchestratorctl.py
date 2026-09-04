@@ -275,6 +275,25 @@ class Waves(Base):
         self.assertEqual(disabled["heldLocks"], [])
         self.assertNotIn("warning", disabled)
 
+    def test_active_wave_without_a_snapshot_is_flagged(self) -> None:
+        """Reporting only deltas needs something to compare against."""
+        self.setup_host()
+        key = self.init_project()
+        self.run_cli("wave", "enable", "--project", key, "--scope", "M1",
+                     "--scope-kind", "milestone", "--cron-job-id", "job-1")
+        flagged = self.run_cli("status", "--project", key)
+        self.assertIn("no snapshot stored", flagged["warning"])
+
+        payload = self.root / "snap.json"
+        payload.write_text(json.dumps({"prs": []}))
+        self.run_cli("snapshot", "--project", key, "--input", str(payload))
+        self.assertNotIn("warning", self.run_cli("status", "--project", key))
+
+    def test_disabled_wave_without_a_snapshot_is_not_flagged(self) -> None:
+        self.setup_host()
+        key = self.init_project()
+        self.assertNotIn("warning", self.run_cli("status", "--project", key))
+
     def test_status_without_project_lists_everything_known(self) -> None:
         """A new session finds existing work without being told a project name."""
         self.setup_host()
