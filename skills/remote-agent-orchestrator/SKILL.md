@@ -229,6 +229,12 @@ separate, deliberate act.
 `WAVE CLOSE` removes the job after live verification that no worker, queued action
 or open review remains. A wave whose scope is exhausted closes itself.
 
+Every supervising run stores the refreshed state as a snapshot. "Report only
+material changes" is not a matter of judgement — it is a comparison against that
+stored state, and a run that stores none has nothing to compare against and
+restates everything it sees. The snapshot holds a digest and a summary, never
+secrets.
+
 Before any dispatch or merge, refresh the tracker, repository, pull request and CI
 state, worktrees and locks. A repeated wake must attach to an existing run rather
 than dispatch the same issue twice. Never treat a worker's claim as evidence:

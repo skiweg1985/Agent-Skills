@@ -84,7 +84,9 @@ agents and open locks — this is how a new session finds existing work.
 
 With a project, refresh the tracker, pull request and CI state, real worker
 liveness and locks, then compare against the stored snapshot and report only
-material deltas, blockers and the next safe action.
+material deltas, blockers and the next safe action. Store the refreshed state as
+the new snapshot afterwards, so the next reader compares against what you saw and
+not against something older.
 
 Check the supervisor itself, not merely its recorded id: ask the scheduler whether
 that job exists, is enabled and has a next run due. An active wave without a live
@@ -95,7 +97,14 @@ unnoticed, and the wave never closes. Report it and name the job id.
 
 Each scheduled run supervises; it does not widen the wave.
 
-1. Refresh state and check liveness on each worker host over SSH.
+1. Refresh state and check liveness on each worker host over SSH. **Store the
+   refreshed state as a snapshot before deciding anything** — the delta rule below
+   compares against it, and a tick that stores none has nothing to compare against
+   and will restate the whole world every time:
+   ```bash
+   python3 "$ORCH" snapshot --project <key> --input <refreshed-state.json> --summary "<what changed>"
+   ```
+   Its `changed` field answers, in one word, whether this tick has anything to say.
 2. Renew the lease of every worker confirmed to be still running. Leave the rest
    to expire, and record that they did. A live process is not progress: when a
    worker has run far longer than the work should take with no new commit, report
@@ -108,6 +117,9 @@ Each scheduled run supervises; it does not widen the wave.
 5. Dispatch the next issue **inside the authorized scope** when a slot frees.
 6. When the scope holds no unfinished work, close the wave: remove the cron job,
    release completed locks, write the final report.
+
+A tick whose snapshot reports `changed: false` and that took no action has nothing
+to report: say nothing, anywhere. That is the whole purpose of storing one.
 
 Post each material finding to the issue in the tracker as the coordinator. Send
 to the delivery channel only what a person must act on — a decision, an approval,
