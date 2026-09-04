@@ -109,19 +109,25 @@ Each scheduled run supervises; it does not widen the wave.
    to expire, and record that they did. A live process is not progress: when a
    worker has run far longer than the work should take with no new commit, report
    that as a diagnosis instead of renewing forever.
-3. For finished work — pull request open, process ended — request review from an
-   agent other than the implementer, and require it to publish its own findings:
-   a pull request review, or a tracker comment under its own identity carrying its
-   session identifier.
-4. For reviewed work, **first read that record back**. No published review means
+3. Decide what a finished process left behind before doing anything else. A pull
+   request means done; commits without one mean stalled, so re-dispatch that agent
+   to publish and keep its lock; neither means dead, so release the lock now
+   instead of waiting out the lease, and say why.
+4. For work that is done, request review from an agent other than the implementer,
+   and require it to publish its own findings: a pull request review, or a tracker
+   comment under its own identity carrying its session identifier. If no other
+   agent is available or preflight-ready, the issue is **blocked** — report it and
+   move on to the next candidate. Never review your own dispatch to keep the wave
+   moving; a coordinator that reviews is no longer an independent check.
+5. For reviewed work, **first read that record back**. No published review means
    the work is not reviewed, whatever the reviewer reported to you; do not merge,
    and say what is missing. Then check the diff against the declared write set and
    merge. Record non-blocking findings as their own tracker items with an owner
    before closing, rather than listing them in the closing report.
    Two finished pull requests that collide merge in completion order; the later
    one rebases, and a non-trivial rebase becomes a blocked issue back to a worker.
-5. Dispatch the next issue **inside the authorized scope** when a slot frees.
-6. When the scope holds no unfinished work, close the wave: remove the cron job,
+6. Dispatch the next issue **inside the authorized scope** when a slot frees.
+7. When the scope holds no unfinished work, close the wave: remove the cron job,
    release completed locks, write the final report.
 
 A tick whose snapshot reports `changed: false` and that took no action has nothing
@@ -143,7 +149,9 @@ disabling the wave does not stop the job — remove it deliberately, or it keeps
 ticking against a wave that no longer exists. It also reports every lock still
 held. Stopping with locks open is legitimate, but from that moment nothing renews
 their leases and nothing notices when the work finishes; say so in the report
-rather than leaving it to be discovered.
+rather than leaving it to be discovered. Say which of those locks belong to a
+worker that already stalled — its commits exist and someone has to publish them,
+and after a stop nobody is watching for that.
 
 ## `WAVE CLOSE <project>`
 

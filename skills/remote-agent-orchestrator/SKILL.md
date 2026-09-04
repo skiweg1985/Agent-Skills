@@ -105,8 +105,18 @@ The lease is a liveness signal, not a timeout:
   SSH. Nothing else.
 - **Progress** is commits, pull requests and tracker comments. They say something
   happened, not that anyone is working now.
-- **Done** is a pull request open *and* the process ended. **Dead** is the process
-  gone with no pull request.
+A finished process has three possible states, and treating them as two loses work:
+
+- **Done** — a pull request is open and the process ended. Proceed to review.
+- **Stalled** — the process ended with no pull request, but commits exist on its
+  branch. The work was done and only publishing failed, usually because the worker
+  could not reach the network. Keep the lock, report it, and re-dispatch the same
+  agent with the bounded task of publishing what it already committed. Never treat
+  this as dead: the commits are real and nobody else will find them.
+- **Dead** — the process ended with no pull request and no commits. Nothing was
+  produced. **Release the lock at once** rather than waiting out the lease, record
+  why, and let the issue become eligible again. Waiting hours for a lease you know
+  is worthless blocks the issue for no reason.
 
 Renew only what you confirmed independently. An unrenewed lease expires, and the
 next acquisition records the holder it superseded.
