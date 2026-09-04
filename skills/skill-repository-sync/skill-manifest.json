@@ -19,12 +19,6 @@
     }
   ],
   "skills": {
-    "a3-cron-coordinator": {
-      "groups": [
-        "coordinator"
-      ],
-      "source": "local"
-    },
     "agent-host-operations": {
       "groups": [
         "base"
@@ -150,6 +144,12 @@
         "worker"
       ],
       "source": "mattpocock-skills"
+    },
+    "remote-agent-orchestrator": {
+      "groups": [
+        "coordinator"
+      ],
+      "source": "local"
     },
     "research": {
       "groups": [

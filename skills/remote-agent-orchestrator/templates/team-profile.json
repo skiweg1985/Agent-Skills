@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "roles": {
+    "coordinator": null,
+    "support": null,
+    "frontend": null,
+    "backendSecurity": null,
+    "review": null
+  },
+  "notes": "Local role bindings only. Reachability belongs in agents.json, credentials in neither."
+}
