@@ -110,8 +110,14 @@ Each scheduled run supervises; it does not widen the wave.
    worker has run far longer than the work should take with no new commit, report
    that as a diagnosis instead of renewing forever.
 3. For finished work — pull request open, process ended — request review from an
-   agent other than the implementer.
-4. For reviewed work, check the diff against the declared write set, then merge.
+   agent other than the implementer, and require it to publish its own findings:
+   a pull request review, or a tracker comment under its own identity carrying its
+   session identifier.
+4. For reviewed work, **first read that record back**. No published review means
+   the work is not reviewed, whatever the reviewer reported to you; do not merge,
+   and say what is missing. Then check the diff against the declared write set and
+   merge. Record non-blocking findings as their own tracker items with an owner
+   before closing, rather than listing them in the closing report.
    Two finished pull requests that collide merge in completion order; the later
    one rebases, and a non-trivial rebase becomes a blocked issue back to a worker.
 5. Dispatch the next issue **inside the authorized scope** when a slot frees.
@@ -141,7 +147,9 @@ rather than leaving it to be discovered.
 
 ## `WAVE CLOSE <project>`
 
-After verifying live that no worker, queued action or open review remains:
+After verifying live that no worker, queued action or open review remains, and
+that every merged issue carries a published review record and its non-blocking
+findings have somewhere to live:
 **release completed locks first, then remove the cron job**, keep the local
 profile and ledger, and report the final evidence. In that order — a lock left
 behind after the supervisor is gone has nobody to clean it up.
