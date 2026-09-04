@@ -250,13 +250,20 @@ def main() -> int:
     # Skills installed before markers existed carry none. The previous status
     # record names them, so adopt those rather than mistaking our own earlier
     # work for someone else's and refusing to touch it ever again.
-    previously_installed = set()
+    previous_record = {}
     if status_path.exists():
         try:
-            record = json.loads(status_path.read_text(encoding="utf-8"))
-            previously_installed = {n for n in record.get("skills", []) if isinstance(n, str)}
+            previous_record = json.loads(status_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
-            previously_installed = set()
+            previous_record = {}
+    # The adoption window must survive a run that installed nothing — a scheduled
+    # sync firing between an upgrade and the next manual run would otherwise clear
+    # the only record of what we own, and the skills could never be adopted again.
+    remembered = [
+        n for n in (previous_record.get("skills") or previous_record.get("lastManagedSkills") or [])
+        if isinstance(n, str)
+    ]
+    previously_installed = set(remembered)
     adopted = sorted(
         name for name, mark in present.items()
         if mark is None and name in previously_installed
@@ -322,6 +329,7 @@ def main() -> int:
         "skillCount": len(installed),
         "skills": sorted(installed),
         "removed": removed,
+        "lastManagedSkills": sorted(installed) if installed else remembered,
         "unmanaged": foreign,
         "adopted": adopted,
         "conflicts": conflicts,
