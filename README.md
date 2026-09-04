@@ -2,6 +2,48 @@
 
 Shared, public [Agent Skills](https://agentskills.io/) for autonomous coding agents such as OpenAI Codex and Claude Code.
 
+## How this repository reaches an agent
+
+One repository, two distribution surfaces, plus a third-party source that is never
+stored here.
+
+```mermaid
+flowchart LR
+  subgraph repo["skiweg1985/Agent-Skills"]
+    own["top-level directories<br/>own skills"]
+    tapdir["skills/<br/>Hermes-only skills"]
+  end
+
+  upstream["mattpocock/skills<br/>pinned revision"]
+
+  subgraph host["agent host"]
+    deploy["~/.agents/skills<br/>deployment clone"]
+    codex["Codex"]
+    cc["Claude Code"]
+  end
+
+  hermes["Hermes tap index"]
+  hinstall["hermes skills install<br/>full bundle"]
+
+  own -->|"updater, fast-forward only"| deploy
+  upstream -->|"install-upstream-skills.py"| deploy
+  deploy --> codex
+  deploy --> cc
+  tapdir -->|"hermes skills tap add"| hermes
+  hermes --> hinstall
+  tapdir -.->|"cloned along, never discovered"| deploy
+```
+
+| Surface | Path | Consumed by | Stored in this repository |
+| --- | --- | --- | --- |
+| Own skills | `<skill-name>/` | Codex, Claude Code | yes |
+| Hermes tap | `skills/<skill-name>/` | Hermes | yes |
+| Upstream skills | `<skill-name>/`, installed | Codex, Claude Code | no, declared only |
+
+The updater validates the first two and deploys the first and third. Discovery and
+validation are deliberately separate, so a Hermes-only skill stays invisible to the
+other agents without escaping the metadata checks.
+
 ## Included skills
 
 - `agent-host-operations` — safe conventions for autonomous work on a shared agent host.
