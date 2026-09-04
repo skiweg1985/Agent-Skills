@@ -152,10 +152,19 @@ Each scheduled run supervises; it does not widen the wave.
    Two finished pull requests that collide merge in completion order; the later
    one rebases, and a non-trivial rebase becomes a blocked issue back to a worker.
 6. Dispatch the next issue **inside the authorized scope** when a slot frees.
-7. Close the wave only when every issue in scope is merged or blocked. An open
+7. Re-examine every standing blocker against the rules of *this* run before
+   treating it as still blocking. A blocker recorded under an earlier rule is a
+   decision, not a fact, and decisions are re-made when the rule changes.
+8. Close the wave only when every issue in scope is merged or blocked. An open
    pull request, a review not yet published, or a stalled worker all count as
    unfinished. Then remove the cron job, release completed locks, and write the
    final report — and report the closure itself, because it ends the supervision.
+
+Work through the steps above before consulting the snapshot. `changed: false`
+says the world looks as it did, not that there is nothing left to do — the rules
+you are running under may have changed since the last tick, which turns a standing
+blocker into an available merge. Only a tick that both found nothing new **and**
+performed no action stays silent.
 
 A tick whose snapshot reports `changed: false` and that took no action has nothing
 to report: answer exactly `[SILENT]`, which the scheduler recognises and does not
