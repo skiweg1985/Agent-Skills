@@ -54,6 +54,18 @@ the same command succeeds immediately when run outside the sandbox. Orphaned
 processes whose sandbox parent has died keep running and must be cleaned up
 explicitly; nothing reaps them.
 
+## A changed SSH host key is a stop, not an obstacle
+
+When a host key no longer matches, SSH is doing its job. The change may be a
+rebuilt machine, or it may be someone in the middle — and nothing you can see from
+your side tells the two apart. Removing the known-hosts entry to get the command
+through discards the only warning you were going to get.
+
+Report it and stop. Replace a key only after the user confirms the change is
+expected, and keep a backup of the file you edited. Host keys are per port as well
+as per host, so the same machine reached on another port legitimately presents a
+different key — that is not a mismatch and needs no action.
+
 ## Agent personas on a shared host
 
 Resolve the worker persona for each agent from the current host or orchestrator configuration, not from this shared skill. Do not hard-code a persona-to-agent mapping or a hostname here; different hosts assign different display names, and this skill must stay portable across all of them. A model family or provider name such as GPT, Claude, Gemini, or OpenRouter is never itself an agent persona.
