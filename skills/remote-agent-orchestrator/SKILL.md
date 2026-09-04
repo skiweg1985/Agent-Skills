@@ -212,6 +212,14 @@ its id through `wave enable`. Use a cron job rather than a background session: a
 background task dies with the host process while remote workers keep running for
 hours, and nobody notices.
 
+**A recorded supervisor is not a running one.** `wave.json` holds the scheduler's
+job id; that the job still exists, is enabled and is due is a separate fact. A wave
+whose supervisor was paused, disabled or deleted keeps its locks and believes it is
+watched while nobody renews a lease, evaluates a review or notices a finished
+worker. `WAVE STATUS` therefore checks the recorded job against the scheduler and
+reports a missing or paused supervisor as a blocker, not as a detail. Storing the
+id is bookkeeping; verifying it is supervision.
+
 `WAVE STOP` removes future scheduling and preserves workers, worktrees and locks.
 `WAVE CLOSE` removes the job after live verification that no worker, queued action
 or open review remains. A wave whose scope is exhausted closes itself.
@@ -220,3 +228,22 @@ Before any dispatch or merge, refresh the tracker, repository, pull request and 
 state, worktrees and locks. A repeated wake must attach to an existing run rather
 than dispatch the same issue twice. Never treat a worker's claim as evidence:
 stdout is diagnostics, and only the pull request and the tracker comment count.
+
+## Reporting
+
+Write findings **into the tracker**, on the issue whose wave is being supervised —
+not only into the channel the schedule happens to deliver to. A delivery channel
+reaches one person now; the tracker is where the next agent, the next session and
+the reviewer look. A supervisor reporting only to a chat leaves no trace where the
+work lives.
+
+Post as the coordinator, in its own voice, and never blur who acted: say that the
+coordinator verified, renewed or blocked something, and never phrase a worker's
+action as your own. Follow the tracker skill's comment conventions — natural
+sentences, no key-value scaffolding, the session identifier as the single trailing
+line.
+
+Report a material delta, not a heartbeat: work finished, a review requested or
+returned, a lease expired, a supervisor found missing, a blocker, a wave closed. A
+tick that found nothing new writes nothing. The local secrets-free ledger stays the
+orchestrator's own memory for snapshot comparison, not a third audience.

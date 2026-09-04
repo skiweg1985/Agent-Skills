@@ -86,6 +86,11 @@ With a project, refresh the tracker, pull request and CI state, real worker
 liveness and locks, then compare against the stored snapshot and report only
 material deltas, blockers and the next safe action.
 
+Check the supervisor itself, not merely its recorded id: ask the scheduler whether
+that job exists, is enabled and has a next run due. An active wave without a live
+supervisor is a blocker — locks stop being renewed, a finished worker goes
+unnoticed, and the wave never closes. Report it and name the job id.
+
 ## Supervisor tick
 
 Each scheduled run supervises; it does not widen the wave.
@@ -103,6 +108,10 @@ Each scheduled run supervises; it does not widen the wave.
 5. Dispatch the next issue **inside the authorized scope** when a slot frees.
 6. When the scope holds no unfinished work, close the wave: remove the cron job,
    release completed locks, write the final report.
+
+Post each material finding to the issue in the tracker as the coordinator, in
+addition to whatever channel the schedule delivers to. A tick that found nothing
+new posts nothing.
 
 ## `WAVE STOP <project>`
 
