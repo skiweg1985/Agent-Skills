@@ -90,6 +90,8 @@ python3 "$ORCH" notify set --quiet-hours 22:00-07:00 # host-wide; "none" removes
 ```
 
 Levels are a subscription, not a volume dial: `blocker` ⊂ `milestone` ⊂ `progress`.
+No level silences a change to the supervision itself — a paused, disabled or
+removed supervisor, or a closed wave, is always reported.
 Quiet hours are a host setting and let only blockers through; the rest is held and
 summarised afterwards. Report the effective level and where it came from, so the
 user can see whether a wave override is still in force.
@@ -144,11 +146,20 @@ Each scheduled run supervises; it does not widen the wave.
    Two finished pull requests that collide merge in completion order; the later
    one rebases, and a non-trivial rebase becomes a blocked issue back to a worker.
 6. Dispatch the next issue **inside the authorized scope** when a slot frees.
-7. When the scope holds no unfinished work, close the wave: remove the cron job,
-   release completed locks, write the final report.
+7. Close the wave only when every issue in scope is merged or blocked. An open
+   pull request, a review not yet published, or a stalled worker all count as
+   unfinished. Then remove the cron job, release completed locks, and write the
+   final report — and report the closure itself, because it ends the supervision.
 
 A tick whose snapshot reports `changed: false` and that took no action has nothing
-to report: say nothing, anywhere. That is the whole purpose of storing one.
+to report: answer exactly `[SILENT]`, which the scheduler recognises and does not
+deliver. Do not answer "nothing to report" — that is a message, and it is the
+noise silence exists to avoid.
+
+The one thing never made silent is a change to the supervision itself. Pausing,
+disabling or removing the supervisor, or closing the wave, is reported with its
+reason regardless of the notification level and regardless of quiet hours. A wave
+that stops being watched without saying so cannot be noticed by anyone.
 
 Post each material finding to the issue in the tracker as the coordinator. Before
 writing anything to the delivery channel, ask `notify decide --class …` and follow

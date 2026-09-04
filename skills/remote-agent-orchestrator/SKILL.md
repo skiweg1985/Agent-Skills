@@ -245,7 +245,10 @@ and that nobody can name, and a held lock without a supervisor is a lease nothin
 renews and a finished worker nobody notices. Removing the scheduler job is a
 separate, deliberate act.
 `WAVE CLOSE` removes the job after live verification that no worker, queued action
-or open review remains. A wave whose scope is exhausted closes itself.
+or open review remains. A wave's scope is exhausted only when every issue in it is **merged or blocked**.
+An open pull request awaiting review is unfinished work, and an implementer that
+has stopped is not a finished issue. Closing on "the worker is done" ends the
+supervision before the review it was supposed to arrange.
 
 Every supervising run stores the refreshed state as a snapshot. "Report only
 material changes" is not a matter of judgement — it is a comparison against that
@@ -288,6 +291,17 @@ During quiet hours only a blocker passes. Everything else is **held, never
 dropped** — `notify hold` parks it, and the first run after the window ends calls
 `notify flush` and sends one summary. Waking up to silence and no idea what
 happened is the failure this avoids.
+
+**Silence is spelled `[SILENT]`.** The scheduler recognises that exact answer and
+skips delivery; an empty response is not the documented way and an explanatory
+"nothing to report" is the noise you were avoiding.
+
+**Never be silent about your own supervision.** A run that pauses, disables or
+removes the supervisor, or closes the wave, reports that and why — whatever the
+level says, and even inside quiet hours. Those are not findings, they are changes
+to who is watching, and a wave that stops being watched without saying so cannot
+be noticed by anyone. The policy governs findings; it never governs a change to
+the supervision itself.
 
 None of this touches the tracker. The record is written either way; the policy
 only decides who gets woken. A decision, an approval, a
