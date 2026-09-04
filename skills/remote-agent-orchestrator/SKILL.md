@@ -254,6 +254,17 @@ is a blocker to report, not a mess to clean up quietly.
 Use a cron job rather than a background session: a background task dies with the host process while remote workers keep running for
 hours, and nobody notices.
 
+**The supervisor's prompt names the wave; it never restates the rules.** Put in it
+what is true of this wave alone — project key, repository, worker host, each
+dispatched agent's session and worktree, the authorized scope, the coordinator
+identity, the finding that authorizes the merge — and one instruction: run the
+supervisor tick from this skill. Nothing else. A rule copied into that prompt is
+the skill as it stood the hour the wave started, and it sits last in the context,
+after the skill itself, as a direct instruction. When the skill is corrected, every
+later tick still reads the stale copy and follows it. One wave spent an evening
+refusing a merge under a rule the skill had stopped stating hours earlier: the
+prompt still said "strict".
+
 **A recorded supervisor is not a running one.** `wave.json` holds the scheduler's
 job id; that the job still exists, is enabled and is due is a separate fact. A wave
 whose supervisor was paused, disabled or deleted keeps its locks and believes it is
@@ -326,7 +337,10 @@ perform.
 6. Dispatch the next issue **inside the authorized scope** when a slot frees.
 7. Re-examine every standing blocker against the rules of *this* run before
    treating it as still blocking. A blocker recorded under an earlier rule is a
-   decision, not a fact, and decisions are re-made when the rule changes.
+   decision, not a fact, and decisions are re-made when the rule changes. The
+   rules of this run are this skill's: where the job's own prompt states one
+   differently, that is a copy taken when the wave started, not an override —
+   follow the skill, and report that the prompt is stale.
 8. Close the wave only when every issue in scope is merged or blocked. An open
    pull request, a review not yet published, or a stalled worker all count as
    unfinished. Then remove the cron job, release completed locks, and write the
