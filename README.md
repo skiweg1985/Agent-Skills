@@ -99,7 +99,13 @@ after cloning to materialize them.
 
 ## Installation
 
-Codex discovers user-level skills in `~/.agents/skills`. Claude Code discovers personal skills in `~/.claude/skills` and follows symlinks.
+Follow the section for the agent you are installing on. The surfaces are
+independent; a host may use one or both.
+
+### Codex and Claude Code
+
+Codex discovers user-level skills in `~/.agents/skills`. Claude Code discovers
+personal skills in `~/.claude/skills` and follows symlinks.
 
 ```bash
 git clone https://github.com/skiweg1985/Agent-Skills.git ~/.agents/skills
@@ -107,29 +113,76 @@ mkdir -p ~/.claude
 ln -s ../.agents/skills ~/.claude/skills
 ```
 
-Then install the updater as described below and run it once. It fetches the declared
-upstream skills into the clone; without that step only this repository's own skills
-are present.
+If either path already exists, back it up and reconcile its contents before
+cloning. Do not overwrite existing skills blindly.
 
-If either path already exists, back it up and reconcile its contents before cloning. Do not overwrite existing skills blindly.
+Then install the updater outside the clone and run it once. Until it runs, only
+this repository's own skills are present — the upstream skills are declared, not
+stored, and the updater fetches them:
+
+```bash
+install -Dm755 \
+  ~/.agents/skills/skill-repository-sync/scripts/update-agent-skills.sh \
+  ~/.local/bin/update-agent-skills
+~/.local/bin/update-agent-skills
+```
+
+A successful run reports how many skills it installed and validated.
+
+### Hermes
+
+Hermes registers this repository as a tap and indexes `skills/`. Skills are then
+searched and installed deliberately, one at a time:
+
+```bash
+hermes skills tap add skiweg1985/Agent-Skills
+hermes skills search a3-cron-coordinator
+hermes skills install a3-cron-coordinator
+```
+
+`hermes skills tap list` shows the effective path per tap; it must be `skills/`
+for this repository. Install the whole skill through the tap rather than
+fetching a raw `SKILL.md` URL — a skill's `scripts/`, `references/`, and
+`templates/` are part of it, and a single-file fetch silently drops them.
+
+Only Hermes-exclusive skills live on the tap. Shared skills such as
+`linear-coordinate-agents` and `cost-aware-agent-routing` sit at the top level
+and do not reach Hermes this way. How they will is settled in
+[the distribution decision](docs/decisions/hermes-skill-distribution.md) — a
+curated directory filled by the updater and referenced from
+`skills.external_dirs` in `~/.hermes/config.yaml`. **That mechanism is decided
+but not yet built.** Until it is, a Hermes host has the tap surface only.
+
+### Verifying an installation
+
+```bash
+~/.local/bin/update-agent-skills          # Codex, Claude Code: sync and validate
+hermes skills list                        # Hermes: what is installed and enabled
+```
 
 ## Automatic updates
 
-Install a trusted copy of the updater outside the repository:
+The updater is installed outside the repository so that an ordinary pull cannot
+change the program cron executes. Run it manually:
+
+```bash
+~/.local/bin/update-agent-skills
+```
+
+A cron example is included in the `skill-repository-sync` skill. The updater only
+accepts the expected GitHub remote, refuses a dirty deployment clone, performs a
+fast-forward-only update, installs the declared upstream skills at their pinned
+revisions, validates skill metadata, and rolls back to the previous commit if
+installation or validation fails.
+
+The updater does not replace itself. After a change to
+`skill-repository-sync/scripts/update-agent-skills.sh`, reinstall it explicitly:
 
 ```bash
 install -Dm755 \
   ~/.agents/skills/skill-repository-sync/scripts/update-agent-skills.sh \
   ~/.local/bin/update-agent-skills
 ```
-
-Run it manually:
-
-```bash
-~/.local/bin/update-agent-skills
-```
-
-A cron example is included in the `skill-repository-sync` skill. The updater only accepts the expected GitHub remote, refuses a dirty deployment clone, performs a fast-forward-only update, installs the declared upstream skills at their pinned revisions, validates skill metadata, and rolls back to the previous commit if installation or validation fails.
 
 ## Project-specific skills
 
