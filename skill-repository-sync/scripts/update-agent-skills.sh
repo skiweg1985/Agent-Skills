@@ -6,6 +6,9 @@ branch="${AGENT_SKILLS_BRANCH:-main}"
 expected_remote="${AGENT_SKILLS_REMOTE:-https://github.com/skiweg1985/Agent-Skills.git}"
 state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/agent-skills"
 lock_file="${XDG_RUNTIME_DIR:-/tmp}/agent-skills-update-${UID}.lock"
+cache_root="$state_dir/upstream"
+install_record="$state_dir/installed-upstream.json"
+installer="$repo/skill-repository-sync/scripts/install-upstream-skills.py"
 
 mkdir -p "$state_dir"
 exec 9>"$lock_file"
@@ -30,23 +33,18 @@ if [[ -n "$(git -C "$repo" status --porcelain --untracked-files=normal)" ]]; the
   exit 12
 fi
 
-old_commit="$(git -C "$repo" rev-parse HEAD)"
-git -C "$repo" fetch --quiet --prune origin "$branch"
-new_commit="$(git -C "$repo" rev-parse FETCH_HEAD)"
+install_upstream() {
+  if [[ ! -f "$installer" ]]; then
+    return 0
+  fi
+  python3 "$installer" \
+    --repo "$repo" \
+    --cache-root "$cache_root" \
+    --record "$install_record"
+}
 
-if [[ "$old_commit" == "$new_commit" ]]; then
-  printf 'Agent-Skills already current at %s.\n' "${old_commit:0:12}"
-  exit 0
-fi
-
-if ! git -C "$repo" merge-base --is-ancestor "$old_commit" "$new_commit"; then
-  printf 'ERROR: origin/%s is not a fast-forward from the deployed commit.\n' "$branch" >&2
-  exit 13
-fi
-
-git -C "$repo" merge --quiet --ff-only "$new_commit"
-
-if ! python3 - "$repo" <<'PY'
+validate_skills() {
+  python3 - "$repo" <<'PY'
 import re
 import sys
 from pathlib import Path
@@ -92,10 +90,43 @@ if errors:
     raise SystemExit(1)
 print(f"Validated {len(skills)} shared skills.")
 PY
-then
+}
+
+old_commit="$(git -C "$repo" rev-parse HEAD)"
+git -C "$repo" fetch --quiet --prune origin "$branch"
+new_commit="$(git -C "$repo" rev-parse FETCH_HEAD)"
+
+if [[ "$old_commit" == "$new_commit" ]]; then
+  printf 'Agent-Skills already current at %s.\n' "${old_commit:0:12}"
+else
+  if ! git -C "$repo" merge-base --is-ancestor "$old_commit" "$new_commit"; then
+    printf 'ERROR: origin/%s is not a fast-forward from the deployed commit.\n' "$branch" >&2
+    exit 13
+  fi
+  git -C "$repo" merge --quiet --ff-only "$new_commit"
+fi
+
+# Third-party skills are installed from their own upstream, not vendored here.
+if ! install_upstream; then
+  if [[ "$old_commit" != "$new_commit" ]]; then
+    printf 'ERROR: upstream skill install failed; restoring %s.\n' "${old_commit:0:12}" >&2
+    git -C "$repo" reset --quiet --hard "$old_commit"
+    install_upstream || printf 'WARNING: upstream skills may be inconsistent.\n' >&2
+  else
+    printf 'ERROR: upstream skill install failed.\n' >&2
+  fi
+  exit 15
+fi
+
+if ! validate_skills; then
   printf 'ERROR: validation failed; restoring %s.\n' "${old_commit:0:12}" >&2
   git -C "$repo" reset --quiet --hard "$old_commit"
+  install_upstream || printf 'WARNING: upstream skills may be inconsistent.\n' >&2
   exit 14
+fi
+
+if [[ "$old_commit" == "$new_commit" ]]; then
+  exit 0
 fi
 
 printf 'Updated Agent-Skills from %s to %s.\n' "${old_commit:0:12}" "${new_commit:0:12}"
