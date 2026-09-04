@@ -224,7 +224,7 @@ Prefer an existing issue that:
 - is unassigned or already assigned to the authenticated user;
 - has clear acceptance criteria and enough context to act;
 - has no unresolved blocker for the intended step;
-- does not overlap another active issue's declared write set or target;
+- does not overlap another active issue's declared write set or target — files both issues declare as shared registration points are not an overlap;
 - fits the user's authorized scope and the agent's available tools.
 
 Choose by the project's priority and dependency order. Do not cherry-pick a convenient low-priority task while higher-priority unblocked work is ready unless the project rules or user direct otherwise.
@@ -247,7 +247,7 @@ Treat ownership and execution as separate mechanisms:
 
 Before launching a worker, the dispatcher must re-fetch the issue and repeat the same identity, assignment/delegate, blocker, overlap, autonomy, and repository-rule checks required for a manual claim. Never trust the webhook payload as the final coordination state.
 
-Support parallel starts only across distinct issues with non-overlapping write sets, dedicated branches and worktrees, independently supervised processes, and explicit concurrency limits. Deduplicate launches with a durable key containing the issue, intended agent, and assignment/delegation revision. A repeated event returns the existing run rather than starting another worker.
+Support parallel starts only across distinct issues with non-overlapping exclusive write sets (files declared shared on both issues may overlap), dedicated branches and worktrees, independently supervised processes, and explicit concurrency limits. Deduplicate launches with a durable key containing the issue, intended agent, and assignment/delegation revision. A repeated event returns the existing run rather than starting another worker.
 
 Map agents to CLIs and specialties explicitly rather than inferring from display names. Each worker must receive the issue identifier, repository, working agreements, acceptance criteria, exclusions, autonomy boundary, validation requirements, and the requirement to report progress naturally in Linear. Successful tests or CI never imply merge or deployment permission.
 

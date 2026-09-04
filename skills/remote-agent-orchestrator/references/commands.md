@@ -42,8 +42,9 @@ repository maps to several tracker projects or the directory is not a worktree.
 4. Run `orchestratorctl.py project init`. The project key is derived from
    repository and tracker, so a second run under a different label reports
    `deduped` rather than creating a rival project.
-5. Report safe candidates, issues lacking a declared write set, and write-set
-   conflicts.
+5. Report safe candidates, issues whose write set is missing or is a description
+   rather than paths, and overlaps between exclusive paths. Name the issues a
+   `START` would first have to send to a coding agent for derivation.
 
 `INIT` must not create a cron job, dispatch a worker, change issue ownership,
 commit, push, merge, deploy, or write anything externally.
@@ -64,14 +65,21 @@ dispatch.
    reachability check can still be unable to test or push. Record only
    secrets-free evidence. Ask the user only about a real access, approval or
    assignment gap; when nobody is present, the question goes into the report.
-4. Select issues that are unblocked, have an accountable owner, declare a write
-   set, and do not overlap another running write set. Stay within `maxWorkers`.
-5. Take a lock for each issue before dispatching. An existing live lock means
+4. When issues in the scope lack a write set, or declare one in words instead of
+   paths, dispatch one coding agent for all of them together to derive exclusive
+   paths, shared files and an owner per shared file, as **Write sets** in the
+   skill describes. The scope go-ahead covers that read-only run. Check its
+   proposal against the repository, decide the shared-file owners, and record the
+   result on each issue before continuing. Do not derive a write set yourself.
+5. Select issues that are unblocked, have an accountable owner, declare a write
+   set in paths, and whose exclusive paths do not overlap another running
+   issue's. Declared shared files may overlap. Stay within `maxWorkers`.
+6. Take a lock for each issue before dispatching. An existing live lock means
    attach to that run and inspect it; never start a second.
-6. Dispatch using the agent's registered invocation template. Require one worktree
+7. Dispatch using the agent's registered invocation template. Require one worktree
    per issue, created by the worker, and an agent-authored tracker start comment.
    Verify both independently — the worker saying so is not evidence.
-7. Give the wave a supervisor. **Read the job id already in the wave state first**
+8. Give the wave a supervisor. **Read the job id already in the wave state first**
    and ask the scheduler whether that job still exists. If it does, reuse it —
    re-enable and re-schedule it rather than creating a second one; stopping a wave
    keeps its job on purpose, so a later start finds it waiting. Create a new job
