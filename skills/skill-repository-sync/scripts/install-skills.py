@@ -20,7 +20,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 MANIFEST = "skills/skill-repository-sync/skill-manifest.json"
@@ -227,7 +227,7 @@ def main() -> int:
         raise
 
     status_path.parent.mkdir(parents=True, exist_ok=True)
-    now = datetime.now(UTC).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     status = {}
     if status_path.exists():
         try:

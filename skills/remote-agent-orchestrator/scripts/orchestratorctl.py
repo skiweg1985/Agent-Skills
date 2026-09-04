@@ -21,7 +21,7 @@ import re
 import sys
 import tempfile
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROLE_NAMES = ("coordinator", "support", "frontend", "backendSecurity", "review")
@@ -36,7 +36,7 @@ class Problem(Exception):
 
 
 def now() -> datetime:
-    return datetime.now(UTC)
+    return datetime.now(timezone.utc)
 
 
 def stamp() -> str:

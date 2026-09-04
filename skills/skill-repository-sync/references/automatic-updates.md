@@ -15,6 +15,12 @@ Recommended user crontab entry:
 */15 * * * * $HOME/.local/bin/update-agent-skills >> $HOME/.local/state/agent-skills/update.log 2>&1
 ```
 
+## Requirements
+
+`git`, `tar`, `flock` and **Python 3.10 or newer**. Agent hosts run a range of
+distributions, so keep these scripts to what 3.10 provides: `datetime.UTC`, for
+example, exists only from 3.11 and must be written `timezone.utc`.
+
 ## Roles
 
 A host declares what it is in `~/.config/agent-skills/host.conf`:

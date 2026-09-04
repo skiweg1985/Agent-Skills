@@ -24,7 +24,7 @@ fi
 record_failure() {
   python3 - "$status_file" "$1" <<'PY'
 import json, sys
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 path, reason = Path(sys.argv[1]), sys.argv[2]
 status = {}
@@ -34,7 +34,7 @@ if path.exists():
     except json.JSONDecodeError:
         status = {}
 status["schemaVersion"] = 1
-status["lastRunAt"] = datetime.now(UTC).isoformat()
+status["lastRunAt"] = datetime.now(timezone.utc).isoformat()
 status["outcome"] = "failed"
 status["failureReason"] = reason
 path.parent.mkdir(parents=True, exist_ok=True)
