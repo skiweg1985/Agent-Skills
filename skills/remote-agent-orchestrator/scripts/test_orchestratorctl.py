@@ -314,5 +314,60 @@ class Waves(Base):
         self.assertIn("not initialized", error["error"])
 
 
+class Notifications(Base):
+    def setUp(self) -> None:
+        super().setUp()
+        self.setup_host()
+        self.key = self.init_project()
+
+    def test_default_is_milestone_from_nothing_configured(self) -> None:
+        policy = self.run_cli("notify", "show")
+        self.assertEqual(policy["level"], "milestone")
+        self.assertEqual(policy["levelFrom"], "default")
+
+    def test_precedence_wave_beats_project_beats_host(self) -> None:
+        self.run_cli("notify", "set", "--level", "blocker")
+        self.assertEqual(self.run_cli("notify", "show")["levelFrom"], "host")
+        self.run_cli("notify", "set", "--project", self.key, "--level", "milestone")
+        self.assertEqual(self.run_cli("notify", "show", "--project", self.key)["levelFrom"], "project")
+        self.run_cli("wave", "enable", "--project", self.key, "--scope", "M1",
+                     "--scope-kind", "milestone", "--cron-job-id", "job-1")
+        self.run_cli("notify", "set", "--project", self.key, "--wave", "--level", "progress")
+        effective = self.run_cli("notify", "show", "--project", self.key)
+        self.assertEqual((effective["level"], effective["levelFrom"]), ("progress", "wave"))
+
+    def test_decide_filters_by_subscription(self) -> None:
+        self.run_cli("notify", "set", "--level", "blocker")
+        self.assertTrue(self.run_cli("notify", "decide", "--class", "blocker")["deliver"])
+        quiet = self.run_cli("notify", "decide", "--class", "progress")
+        self.assertFalse(quiet["deliver"])
+        self.assertFalse(quiet["hold"])
+
+    def test_quiet_hours_hold_everything_but_blockers(self) -> None:
+        """Held, never dropped: waking up to nothing is the failure we avoid."""
+        self.run_cli("notify", "set", "--level", "progress", "--quiet-hours", "00:00-23:59")
+        held = self.run_cli("notify", "decide", "--class", "milestone")
+        self.assertFalse(held["deliver"])
+        self.assertTrue(held["hold"])
+        self.assertTrue(self.run_cli("notify", "decide", "--class", "blocker")["deliver"])
+
+    def test_held_notices_survive_and_flush_once(self) -> None:
+        self.run_cli("notify", "hold", "--class", "milestone", "--text", "PR offen")
+        self.run_cli("notify", "hold", "--class", "progress", "--text", "Worker laeuft")
+        self.assertEqual(self.run_cli("notify", "show")["held"], 2)
+        flushed = self.run_cli("notify", "flush")
+        self.assertEqual(flushed["flushed"], 2)
+        self.assertEqual(flushed["notices"][0]["text"], "PR offen")
+        self.assertEqual(self.run_cli("notify", "flush")["flushed"], 0)
+
+    def test_invalid_quiet_hours_are_rejected(self) -> None:
+        error = self.run_cli("notify", "set", "--quiet-hours", "22-7", expected=2)
+        self.assertIn("22:00-07:00", error["error"])
+
+    def test_quiet_hours_may_cross_midnight(self) -> None:
+        self.run_cli("notify", "set", "--quiet-hours", "22:00-07:00")
+        self.assertEqual(self.run_cli("notify", "show")["quietHours"], "22:00-07:00")
+
+
 if __name__ == "__main__":
     unittest.main()

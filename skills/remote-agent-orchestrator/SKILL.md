@@ -272,7 +272,25 @@ your own — say that the coordinator verified, renewed or blocked something.
 Follow the tracker skill's comment conventions: natural sentences, no key-value
 scaffolding, the session identifier as the single trailing line.
 
-**The delivery channel gets what needs a person.** A decision, an approval, a
+**The delivery channel gets what needs a person — and what that means is
+configured, not judged.** Ask the tool before writing to the channel:
+
+```bash
+python3 "$ORCH" notify decide --class blocker|milestone|progress --project <key>
+```
+
+It answers `deliver`, `hold`, and why. Three subscription levels, each including
+the ones above it: `blocker` for what forces a decision, `milestone` for finished
+issues, requested reviews and closed waves, `progress` for every material change.
+A wave's setting beats the project's, which beats the host default.
+
+During quiet hours only a blocker passes. Everything else is **held, never
+dropped** — `notify hold` parks it, and the first run after the window ends calls
+`notify flush` and sends one summary. Waking up to silence and no idea what
+happened is the failure this avoids.
+
+None of this touches the tracker. The record is written either way; the policy
+only decides who gets woken. A decision, an approval, a
 blocker nobody else can clear, a finished wave. Not progress a human cannot act
 on: "the worker is still running" belongs in the tracker at most, and usually
 nowhere. If a message would tell the reader nothing they must do, it does not
