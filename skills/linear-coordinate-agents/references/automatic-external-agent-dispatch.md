@@ -27,7 +27,7 @@ Parallel workers are safe only when each has:
 
 - a different Linear issue;
 - one accountable owner;
-- an explicit, non-overlapping write set;
+- an explicit write set whose exclusive paths overlap no other worker's (files declared shared on both issues may overlap);
 - a dedicated branch and worktree;
 - an independently supervised process;
 - a per-agent and global concurrency limit.

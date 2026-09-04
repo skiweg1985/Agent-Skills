@@ -159,17 +159,46 @@ reason. Both checks are two commands; skipping them costs an hour of a worker
 repeating something that cannot succeed. A worktree the worker cannot write in is
 a hard stop for that issue — report it, do not substitute another agent.
 
-## Work, review, merge
+## Write sets
 
 A **write set is declared on the issue** before it is dispatchable; an issue
-without one is not dispatched. Check the diff against that declaration at pull
-request time, and **grade what you find** — the rule exists to keep two workers
-out of the same files, so weigh the breach against that risk rather than against
-the letter:
+without one is not dispatched. It has two parts, and both are lists of paths:
 
-- The extra files overlap **another active worker's declared write set** — hard
+- **Exclusive paths** — concrete paths or globs that only this issue's worker
+  touches. Two issues run in parallel only when their exclusive paths are
+  disjoint.
+- **Shared files** — registration points that every track in the wave is
+  expected to append to: a router, a route table, translation files, a generated
+  contract, a README. They are named explicitly and **may overlap** between
+  issues. A conflict there is expected and mechanical, and the pull request that
+  finishes second reconciles it during its rebase.
+
+A description is not a write set. "Selected parts of the catalog", "the
+components this needs", "the translation files" cannot be checked against a diff,
+and an issue declared that way is **not dispatchable** until it names paths.
+
+**The coordinator does not derive write sets.** It has no checkout and would be
+guessing where the seams in the code lie — exactly the kind of inference this
+skill forbids elsewhere. When issues inside an authorized scope lack a write set,
+dispatch **one coding agent for all of them together**, on the worker host, with
+a lock and a slot like a review, to read the repository and propose for each
+issue its exclusive paths, its shared files, and one owner per shared file. That
+run is read-only: no worktree edits, no commits, no tracker changes. The
+coordinator then checks that the exclusive paths are disjoint across the wave,
+decides the owner of each shared file, and records the result on every issue.
+The proposal is a worker's claim like any other: read the paths it names against
+the repository before recording them.
+
+## Work, review, merge
+
+Check the diff against the declared write set at pull request time, and **grade
+what you find** — the rule exists to keep two workers out of the same files, so
+weigh the breach against that risk rather than against the letter:
+
+- The extra files overlap **another active worker's exclusive paths** — hard
   stop. Leave the pull request open, keep the lock, report the issue as blocked.
   This is the collision the rule exists for.
+- The extra files are **declared shared files** — expected. Not a deviation.
 - The extra files overlap **nothing**, and the published review covers them —
   record the deviation on the issue, correct its declared write set for the
   record, and merge. Nothing unreviewed and nothing colliding gets in, which is
@@ -182,8 +211,8 @@ visible; an edited claim is not.
 A human may grant an explicit exception for a specific breach. It is recorded on
 the issue, applies to that one merge, and is never reused as standing permission.
 
-Run **as many workers as there are issues with disjoint write sets**, under the
-project's `maxWorkers` cap. The cap is an emergency brake, not the steering.
+Run **as many workers as there are issues with disjoint exclusive paths**, under
+the project's `maxWorkers` cap. The cap is an emergency brake, not the steering.
 
 **Review is mandatory and performed by an agent other than the implementer.**
 **It must leave a record the coordinator did not write.** The reviewer posts its
@@ -199,8 +228,12 @@ not into a closing paragraph where they are read once and lost.
 A review is work: it occupies a slot and its own lock. **The coordinator merges** —
 it is the only party that sees every write set in the wave and can tell whether
 two finished pull requests break together. When two collide, the first to finish
-merges and the second rebases; a rebase that is not trivially clean becomes a
-blocked issue back to a worker, because resolving it is implementation work.
+merges and the second rebases. A conflict confined to declared shared files is
+reconciled by the second issue's implementer as part of finishing, and its
+published review still stands, because the reviewed change is unchanged outside
+those files. A conflict anywhere else becomes a blocked issue back to a worker,
+because resolving it is implementation work, and the rebased pull request is
+reviewed again, because it is a different diff.
 
 ## Local helpers
 
@@ -328,12 +361,15 @@ perform.
 5. For reviewed work, **first read that record back**. No published review means
    the work is not reviewed, whatever the reviewer reported to you; do not merge,
    and say what is missing. Then check the diff against the declared write set.
-   Files beyond it that overlap another active worker are a hard stop; files that
-   overlap nobody and are covered by the review are recorded as a deviation on the
-   issue and merged. Say which of the two you found, and name the files.
+   Files beyond the exclusive paths that overlap another active worker's exclusive
+   paths are a hard stop; declared shared files are expected; files that overlap
+   nobody and are covered by the review are recorded as a deviation on the issue
+   and merged. Say which of the three you found, and name the files.
 
    Two finished pull requests that collide merge in completion order; the later
-   one rebases, and a non-trivial rebase becomes a blocked issue back to a worker.
+   one rebases. A conflict confined to declared shared files is reconciled by its
+   implementer and keeps its review; any other conflict becomes a blocked issue
+   back to a worker and is reviewed again.
 6. Dispatch the next issue **inside the authorized scope** when a slot frees.
 7. Re-examine every standing blocker against the rules of *this* run before
    treating it as still blocking. A blocker recorded under an earlier rule is a
