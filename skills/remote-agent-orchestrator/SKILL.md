@@ -307,6 +307,13 @@ dropped** — `notify hold` parks it, and the first run after the window ends ca
 `notify flush` and sends one summary. Waking up to silence and no idea what
 happened is the failure this avoids.
 
+**Silence is for having nothing to do, never for having nothing new to say.**
+Decide what to do first, then decide whether to speak. A tick that could merge,
+release a lock, request a review or dispatch within scope performs that action and
+reports it — even when the external state looks exactly as it did last time. State
+that has not changed is not the same as a decision that has not changed: a rule
+you gained since the last run can make yesterday's blocker today's merge.
+
 **Silence is spelled `[SILENT]`.** The scheduler recognises that exact answer and
 skips delivery; an empty response is not the documented way and an explanatory
 "nothing to report" is the noise you were avoiding.
