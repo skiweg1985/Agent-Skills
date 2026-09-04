@@ -269,11 +269,12 @@ An open pull request awaiting review is unfinished work, and an implementer that
 has stopped is not a finished issue. Closing on "the worker is done" ends the
 supervision before the review it was supposed to arrange.
 
-Every supervising run stores the refreshed state as a snapshot. "Report only
-material changes" is not a matter of judgement — it is a comparison against that
-stored state, and a run that stores none has nothing to compare against and
-restates everything it sees. The snapshot holds a digest and a summary, never
-secrets.
+Every supervising run stores the refreshed state as a snapshot **after doing its
+work, not before deciding whether to do any**. "Report only material changes" is a
+comparison against that stored state rather than a matter of judgement, and a run
+that stores none restates everything it sees. But the digest answers what to
+*say*, never what to *do*: consulting it first turns an unchanged world into a
+skipped merge. The snapshot holds a digest and a summary, never secrets.
 
 Before any dispatch or merge, refresh the tracker, repository, pull request and CI
 state, worktrees and locks. A repeated wake must attach to an existing run rather
