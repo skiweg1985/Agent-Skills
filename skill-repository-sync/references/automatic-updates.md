@@ -55,6 +55,7 @@ remove it from the manifest; the next run deletes it from the clone.
 - Non-fast-forward history is rejected.
 - A failing upstream install rolls the deployment back to its previous commit (exit 15).
 - Invalid or duplicate skill metadata causes the deployment to roll back to its previous commit (exit 14).
+- Validation covers the top-level directories the agents discover and any skill published under `skills/`. The latter are not discovered by Codex or Claude Code; validating them keeps a broken one from shipping unnoticed. A name reused across both is reported as a duplicate.
 - A skill name claimed by two sources, a missing upstream skill, an unreachable revision,
   or a manifest entry that is still tracked in Git stops the run before anything is copied.
 - Cron output is retained in `~/.local/state/agent-skills/update.log`.
