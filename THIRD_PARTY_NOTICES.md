@@ -2,24 +2,19 @@
 
 ## Matt Pocock Skills
 
-The following skill directories are vendored from [mattpocock/skills](https://github.com/mattpocock/skills) at upstream commit `6654f6b` (2026), licensed under the MIT License by Matt Pocock.
+This repository does not vendor these skills. It records where they come from, and
+the updater installs them into a deployment clone directly from upstream.
 
-The upstream category directories were flattened so each skill remains directly discoverable as `<skill-name>/SKILL.md`. Skill contents and supporting files were otherwise copied unchanged.
+- Source: [mattpocock/skills](https://github.com/mattpocock/skills)
+- License: MIT, by Matt Pocock — full text in [`licenses/mattpocock-skills-MIT.txt`](licenses/mattpocock-skills-MIT.txt)
+- Pinned revision and skill inventory: [`skill-repository-sync/upstream-skills.json`](skill-repository-sync/upstream-skills.json)
 
-### Engineering
+The manifest is the single source of truth for which skills are installed and at
+which revision. Upstream groups its skills into category directories; the installer
+flattens that layer so each one stays discoverable as `<skill-name>/SKILL.md`.
+Skill contents are installed unchanged.
 
-`ask-matt`, `code-review`, `codebase-design`, `diagnosing-bugs`, `domain-modeling`, `grill-with-docs`, `implement`, `improve-codebase-architecture`, `prototype`, `research`, `resolving-merge-conflicts`, `setup-matt-pocock-skills`, `tdd`, `to-spec`, `to-tickets`, `triage`, `wayfinder`, `wizard`
-
-### Productivity
-
-`grill-me`, `grilling`, `handoff`, `teach`, `to-questionnaire`, `wait-what`, `writing-for-agents`
-
-### Miscellaneous
-
-`git-guardrails-claude-code`, `migrate-to-shoehorn`, `scaffold-exercises`, `setup-pre-commit`
-
-### Upstream in-progress
-
-`claude-handoff`, `implement-spec`, `loop-me`, `retro`, `setup-ts-deep-modules`, `writing-beats`, `writing-fragments`, `writing-shape`
-
-The complete upstream license text is preserved in [`licenses/mattpocock-skills-MIT.txt`](licenses/mattpocock-skills-MIT.txt).
+Eight of the installed skills sit in the upstream `in-progress` category:
+`claude-handoff`, `implement-spec`, `loop-me`, `retro`, `setup-ts-deep-modules`,
+`writing-beats`, `writing-fragments`, `writing-shape`. Remove them from the
+manifest if you would rather not deploy work upstream still marks as unfinished.
