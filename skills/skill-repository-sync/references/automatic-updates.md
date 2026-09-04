@@ -89,7 +89,9 @@ automatically.
 
 `sync-status.json` lists what the run installed under `skills`, what it removed
 under `removed`, what it left alone under `unmanaged`, and any name collision
-under `conflicts`.
+under `conflicts`. `lastManagedSkills` keeps the last non-empty set the sync
+installed, so a run that installs nothing cannot erase the record of what belongs
+to the sync.
 
 ## Adding or regrouping a skill
 
