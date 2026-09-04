@@ -122,6 +122,25 @@ part of a skill and a single-file fetch drops them.
 If any of these paths already exists, back it up and reconcile before pointing
 the agent at it. Do not overwrite existing skills blindly.
 
+## Skills a host keeps for itself
+
+The sync does not own the delivery directory outright. Every skill it installs
+carries a `.agent-skills-managed.json` marker; anything without one was placed by
+an agent's skill tooling or by hand, and the sync never updates, replaces or
+removes it.
+
+So a skill that names real hosts, addresses or paths — which this repository
+cannot hold — simply lives there unmarked:
+
+```bash
+mkdir -p ~/.agents/skills/<name>
+$EDITOR ~/.agents/skills/<name>/SKILL.md
+```
+
+If an unmarked skill has the same name as one the host's roles select, the
+existing one is kept and the shared version is not installed; the run says so.
+Invalid metadata in an unmarked skill warns rather than failing the sync.
+
 ## Keeping a host current
 
 ```bash

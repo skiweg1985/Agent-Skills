@@ -39,6 +39,32 @@ receives by changing its roles, or the skill's groups in the manifest.
 A skill present in the clone but absent from the manifest aborts the sync. That
 is deliberate — assign it a group rather than working around the error.
 
+## The delivery directory is shared ground
+
+The sync does not own `~/.agents/skills` outright. Agents create skills there
+through their own tooling and people add them by hand, and both must survive.
+
+Each skill the sync installs carries a marker file, `.agent-skills-managed.json`,
+naming its source, groups and revision. That marker is the whole ownership rule:
+
+- **With a marker** — the sync placed it. It updates it, and removes it when the
+  host's roles no longer select it.
+- **Without a marker** — someone else placed it. The sync never touches it: not to
+  update it, not to delete it, not when roles change.
+
+So a skill that names real hosts, addresses or paths — which the working agreement
+keeps out of the shared repository — simply lives in the delivery directory
+unmarked, and stays.
+
+Two consequences the sync reports rather than resolving on its own. If an unmarked
+skill has the same name as one the roles select, the existing skill is kept and the
+shared version is **not** installed; resolve it by renaming one of them. And an
+unmarked skill with invalid metadata produces a warning, not a failed sync — one
+host's own skill must not roll back everyone else's update.
+
+Never edit a marked skill in place: the next run replaces it. Change the shared
+repository, or remove the marker and take ownership of the copy.
+
 ## When a skill is missing, read the status record first
 
 Under cron a failing sync is silent, so a missing skill and a stale host look

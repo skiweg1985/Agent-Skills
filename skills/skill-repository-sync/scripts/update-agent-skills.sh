@@ -86,20 +86,26 @@ from pathlib import Path
 
 name_re = re.compile(r"^[a-z0-9]+(?:[-_][a-z0-9]+)*$")
 errors = []
+warnings = []
 
 
-def check(files, label):
+MARKER = ".agent-skills-managed.json"
+
+
+def check(files, label, fatal=True):
+    """Problems in what we manage fail the run; problems in what we merely found do not."""
     seen = {}
     for skill_file in files:
         rel = f"{label}:{skill_file.parent.name}"
+        sink = errors if (fatal or (skill_file.parent / MARKER).is_file()) else warnings
         text = skill_file.read_text(encoding="utf-8")
         if not text.startswith("---\n"):
-            errors.append(f"{rel}: missing YAML frontmatter")
+            sink.append(f"{rel}: missing YAML frontmatter")
             continue
         try:
             _, frontmatter, _ = text.split("---", 2)
         except ValueError:
-            errors.append(f"{rel}: malformed YAML frontmatter")
+            sink.append(f"{rel}: malformed YAML frontmatter")
             continue
         fields = {}
         for line in frontmatter.splitlines():
@@ -108,13 +114,13 @@ def check(files, label):
                 fields[key.strip()] = value.strip().strip('"').strip("'")
         name = fields.get("name", "")
         if not name_re.fullmatch(name):
-            errors.append(f"{rel}: invalid or missing name")
+            sink.append(f"{rel}: invalid or missing name")
         if name and name != skill_file.parent.name:
-            errors.append(f"{rel}: name does not match directory")
+            sink.append(f"{rel}: name does not match directory")
         if not fields.get("description", ""):
-            errors.append(f"{rel}: missing description")
+            sink.append(f"{rel}: missing description")
         if name and name in seen:
-            errors.append(f"{rel}: duplicate skill name {name}")
+            sink.append(f"{rel}: duplicate skill name {name}")
         seen[name] = rel
 
 
@@ -124,12 +130,14 @@ source = sorted(Path(sys.argv[1]).resolve().glob("skills/*/SKILL.md"))
 delivered = sorted(Path(sys.argv[2]).expanduser().resolve().glob("*/SKILL.md"))
 
 check(source, "clone")
-check(delivered, "delivered")
+check(delivered, "delivered", fatal=False)
 
 if not source:
     errors.append("the clone contains no skills")
 if not delivered:
     errors.append("nothing was delivered for this host's roles")
+for warning in warnings:
+    print(f"WARNING: {warning}", file=sys.stderr)
 if errors:
     print("\n".join(errors), file=sys.stderr)
     raise SystemExit(1)
