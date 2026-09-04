@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "agents": {
+    "worker-1": {
+      "transport": "ssh",
+      "host": "build-1.example",
+      "user": "agent",
+      "workdir": "/srv/work",
+      "branchPrefix": "wave/",
+      "invocation": "codex exec {prompt}"
+    }
+  },
+  "notes": "Where an agent lives and how to invoke it. Never credentials: public-key authentication is provisioned on the host itself."
+}
