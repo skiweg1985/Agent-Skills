@@ -239,9 +239,13 @@ than automatically.
 
 ## Supervision
 
-Only an explicit `WAVE START` may create one temporary supervisor cron job for the
-project, attaching this skill with the project as working directory, and persist
-its id through `wave enable`. Use a cron job rather than a background session: a
+Only an explicit `WAVE START` may give a project a supervisor, attaching this
+skill with the project as working directory, and persist its id through
+`wave enable`. **One supervisor per project, ever.** A start reuses the job whose
+id the wave state already holds when the scheduler still knows it, and creates one
+only when that id names nothing — stopping a wave deliberately keeps its job, so a
+later start finds it rather than adding a rival. Two supervisors for one project
+is a blocker to report, not a mess to clean up quietly. Use a cron job rather than a background session: a
 background task dies with the host process while remote workers keep running for
 hours, and nobody notices.
 

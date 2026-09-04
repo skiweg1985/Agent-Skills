@@ -71,7 +71,17 @@ dispatch.
 6. Dispatch using the agent's registered invocation template. Require one worktree
    per issue, created by the worker, and an agent-authored tracker start comment.
    Verify both independently — the worker saying so is not evidence.
-7. Create one temporary supervisor cron job and persist its id with `wave enable`.
+7. Give the wave a supervisor. **Read the job id already in the wave state first**
+   and ask the scheduler whether that job still exists. If it does, reuse it —
+   re-enable and re-schedule it rather than creating a second one; stopping a wave
+   keeps its job on purpose, so a later start finds it waiting. Create a new job
+   only when the recorded id names nothing. Persist the id with `wave enable`
+   either way.
+
+   Two supervisors for one project is a blocker, not something to tidy up: they
+   tick against the same wave, both believe they are in charge, and the second one
+   is evidence that a stop or close left something behind. Report it with both job
+   ids and let a human decide which survives.
 
 A human exception for a specific breach is granted as a comment on the issue,
 where the coordinator verifies it independently and the next agent can still find
