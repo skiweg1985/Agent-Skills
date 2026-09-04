@@ -130,14 +130,14 @@ unnoticed, and the wave never closes. Report it and name the job id.
 
 Each scheduled run supervises; it does not widen the wave.
 
-1. Refresh state and check liveness on each worker host over SSH. **Store the
-   refreshed state as a snapshot before deciding anything** — the delta rule below
-   compares against it, and a tick that stores none has nothing to compare against
-   and will restate the whole world every time:
-   ```bash
-   python3 "$ORCH" snapshot --project <key> --input <refreshed-state.json> --summary "<what changed>"
-   ```
-   Its `changed` field answers, in one word, whether this tick has anything to say.
+**Work every step before touching the snapshot.** The snapshot says whether the
+world looks different, which is not the same as whether there is anything to do —
+the rules you run under can change between ticks, and no digest can see that. A
+tick that consults it early and stops there skips the merge it was supposed to
+perform.
+
+1. Refresh state and check liveness on each worker host over SSH.
+
 2. Renew the lease of every worker confirmed to be still running. Leave the rest
    to expire, and record that they did. A live process is not progress: when a
    worker has run far longer than the work should take with no new commit, report
@@ -170,14 +170,16 @@ Each scheduled run supervises; it does not widen the wave.
    unfinished. Then remove the cron job, release completed locks, and write the
    final report — and report the closure itself, because it ends the supervision.
 
-Work through the steps above before consulting the snapshot. `changed: false`
-says the world looks as it did, not that there is nothing left to do — the rules
-you are running under may have changed since the last tick, which turns a standing
-blocker into an available merge. Only a tick that both found nothing new **and**
-performed no action stays silent.
+Only now store the snapshot, and only to decide what to say:
 
-A tick whose snapshot reports `changed: false` and that took no action has nothing
-to report: answer exactly `[SILENT]`, which the scheduler recognises and does not
+```bash
+python3 "$ORCH" snapshot --project <key> --input <refreshed-state.json> --summary "<what changed>"
+```
+
+`changed: false` says the world looks as it did, not that nothing was done. A tick
+that merged, released a lock or requested a review reports it whatever the digest
+says. Only a tick that both found nothing new **and** performed no action stays
+silent: answer exactly `[SILENT]`, which the scheduler recognises and does not
 deliver. Do not answer "nothing to report" — that is a message, and it is the
 noise silence exists to avoid.
 
