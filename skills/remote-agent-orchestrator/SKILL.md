@@ -131,21 +131,36 @@ blocked issue back to a worker, because resolving it is implementation work.
 
 ## Local helpers
 
+The scripts sit next to this file. A session's working directory is not the skill
+directory, so resolve `scripts/` against **this skill's own location** rather than
+the current directory. Where the shared sync delivers it, that is:
+
 ```bash
-python3 scripts/orchestratorctl.py setup
-python3 scripts/orchestratorctl.py setup --role backendSecurity=worker-2
-python3 scripts/orchestratorctl.py setup --agent worker-1 --host build-1.example \
+ORCH=~/.agents/skills/remote-agent-orchestrator/scripts/orchestratorctl.py
+```
+
+If you cannot resolve the skill directory, find it once and use the absolute path
+for the rest of the session:
+
+```bash
+find ~/.agents/skills ~/.hermes/skills ~/.claude/skills -name orchestratorctl.py 2>/dev/null | head -1
+```
+
+```bash
+python3 "$ORCH" setup
+python3 "$ORCH" setup --role backendSecurity=worker-2
+python3 "$ORCH" setup --agent worker-1 --host build-1.example \
   --user agent --workdir /srv/work --invocation 'codex exec {prompt}'
-python3 scripts/orchestratorctl.py project init --repo <url> --tracker <project>
-python3 scripts/orchestratorctl.py status
-python3 scripts/orchestratorctl.py status --project <key>
-python3 scripts/orchestratorctl.py wave enable --project <key> \
+python3 "$ORCH" project init --repo <url> --tracker <project>
+python3 "$ORCH" status
+python3 "$ORCH" status --project <key>
+python3 "$ORCH" wave enable --project <key> \
   --scope <milestone> --scope-kind milestone --cron-job-id <id>
-python3 scripts/orchestratorctl.py lock acquire --project <key> --issue <issue> \
+python3 "$ORCH" lock acquire --project <key> --issue <issue> \
   --agent <agent> --session <session> --revision <revision>
-python3 scripts/orchestratorctl.py lock renew --project <key> --issue <issue>
-python3 scripts/orchestratorctl.py lock release --project <key> --issue <issue>
-python3 scripts/orchestratorctl.py snapshot --project <key> --input <file>
+python3 "$ORCH" lock renew --project <key> --issue <issue>
+python3 "$ORCH" lock release --project <key> --issue <issue>
+python3 "$ORCH" snapshot --project <key> --input <file>
 ```
 
 Every command prints JSON and never contacts a worker; remote actions are yours.
