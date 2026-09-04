@@ -72,6 +72,25 @@ ls ~/.agents/skills
   staleness stays measurable even after several failed runs.
 - Cron output is retained in `~/.local/state/agent-skills/update.log`.
 
+## A skill for this host only
+
+Create it in the delivery directory like any other:
+
+```bash
+mkdir -p ~/.agents/skills/<name>
+$EDITOR ~/.agents/skills/<name>/SKILL.md
+```
+
+Do not give it a `.agent-skills-managed.json` marker. Without one the sync treats
+it as someone else's and never updates, replaces or removes it — which is what
+lets it name real hosts and paths that the shared repository forbids. Agent
+tooling that writes skills into this directory is covered by the same rule
+automatically.
+
+`sync-status.json` lists what the run installed under `skills`, what it removed
+under `removed`, what it left alone under `unmanaged`, and any name collision
+under `conflicts`.
+
 ## Adding or regrouping a skill
 
 Edit `skills/skill-repository-sync/skill-manifest.json`: every skill needs at

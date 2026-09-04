@@ -10,6 +10,11 @@ Own skills are copied from the clone. Skills belonging to a declared source are
 exported from that upstream repository at its pinned revision. A skill with no
 group aborts the run, so nothing is installed by accident and no upstream source
 can introduce a skill without a deliberate assignment.
+
+A host may also keep skills of its own — ones that name real addresses, paths or
+identifiers the shared repository forbids. They live in their own directory, so
+this rebuild cannot destroy them, and are linked into the delivery directory
+after it is built. A shared skill of the same name always wins.
 """
 from __future__ import annotations
 
@@ -163,10 +168,49 @@ def export_upstream(cache: Path, revision: str, upstream_dir: str,
              f"{extract.stderr.decode(errors='replace').strip()}")
 
 
+MARKER = ".agent-skills-managed.json"
+
+
+def marker_of(directory: Path) -> dict | None:
+    """Return the sync's ownership marker for this skill, or None if it has none.
+
+    The delivery directory is shared ground: agents create skills here through
+    their own tooling, and people drop them in by hand. The marker is how this
+    tool tells what it placed from what it merely found, so it can update and
+    remove its own without ever touching anyone else's.
+    """
+    path = directory / MARKER
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        # A marker we cannot read is still a marker we wrote.
+        return {}
+
+
+def install_skill(target: Path, name: str, build, marker: dict) -> None:
+    """Materialize one skill and swap it into place, so it is never half-written."""
+    staging = Path(tempfile.mkdtemp(dir=str(target), prefix=f".{name}-"))
+    try:
+        build(staging / name)
+        if not (staging / name / "SKILL.md").is_file():
+            fail(f"exported {name!r} has no SKILL.md")
+        (staging / name / MARKER).write_text(
+            json.dumps(marker, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        destination = target / name
+        previous = staging / f"{name}.previous"
+        if destination.exists():
+            destination.rename(previous)
+        (staging / name).rename(destination)
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", required=True, help="the Git clone")
-    parser.add_argument("--target", required=True, help="the generated delivery directory")
+    parser.add_argument("--target", required=True, help="the shared delivery directory")
     parser.add_argument("--cache-root", required=True)
     parser.add_argument("--roles", required=True, help="space-separated role names")
     parser.add_argument("--status", required=True)
@@ -194,37 +238,53 @@ def main() -> int:
     if not chosen:
         fail(f"roles {' '.join(roles)} select no skills")
 
-    # Build beside the target and swap, so a failure never leaves a half-built
-    # delivery directory in place.
-    target.parent.mkdir(parents=True, exist_ok=True)
-    staging = Path(tempfile.mkdtemp(dir=str(target.parent), prefix=".skills-staging-"))
-    try:
-        prepared: dict[str, tuple[Path, str, dict[str, str]]] = {}
-        for name in sorted(chosen):
-            origin = chosen[name].get("source", LOCAL)
-            if origin == LOCAL:
-                export_local(repo, name, staging / name)
-                continue
+    target.mkdir(parents=True, exist_ok=True)
+    # Who owns what is already here. Anything without our marker belongs to
+    # someone else — an agent's skill-creation tool, or a person — and is left
+    # exactly as it is.
+    present = {
+        entry.name: marker_of(entry)
+        for entry in target.iterdir()
+        if entry.is_dir() and not entry.name.startswith(".")
+    }
+    foreign = sorted(name for name, mark in present.items() if mark is None)
+    conflicts = sorted(name for name in chosen if name in foreign)
+
+    prepared: dict[str, tuple[Path, str, dict[str, str]]] = {}
+    installed: list[str] = []
+    for name in sorted(chosen):
+        if name in conflicts:
+            continue
+        origin = chosen[name].get("source", LOCAL)
+        marker = {
+            "schemaVersion": 1,
+            "installedAt": datetime.now(timezone.utc).isoformat(),
+            "source": origin,
+            "groups": chosen[name]["groups"],
+        }
+        if origin == LOCAL:
+            marker["commit"] = git("-C", str(repo), "rev-parse", "HEAD").stdout.strip()
+            install_skill(target, name,
+                          lambda dest, n=name: export_local(repo, n, dest), marker)
+        else:
             if origin not in prepared:
                 prepared[origin] = prepare_source(manifest["_sources"][origin], cache_root)
             cache, revision, available = prepared[origin]
             if name not in available:
                 fail(f"source {origin}: skill {name!r} not found at {revision[:12]}")
-            export_upstream(cache, revision, available[name], origin, name, staging / name)
+            marker["revision"] = revision
+            install_skill(target, name,
+                          lambda dest, n=name, c=cache, r=revision, a=available, o=origin:
+                              export_upstream(c, r, a[n], o, n, dest), marker)
+        installed.append(name)
 
-        for name in sorted(chosen):
-            if not (staging / name / "SKILL.md").exists():
-                fail(f"exported {name!r} has no SKILL.md")
-
-        previous = target.with_name(target.name + ".previous")
-        shutil.rmtree(previous, ignore_errors=True)
-        if target.exists():
-            target.rename(previous)
-        staging.rename(target)
-        shutil.rmtree(previous, ignore_errors=True)
-    except BaseException:
-        shutil.rmtree(staging, ignore_errors=True)
-        raise
+    # Remove only what we installed and no longer select. A skill we never placed
+    # is never ours to delete.
+    removed = []
+    for name, mark in sorted(present.items()):
+        if mark is not None and name not in chosen:
+            shutil.rmtree(target / name)
+            removed.append(name)
 
     status_path.parent.mkdir(parents=True, exist_ok=True)
     now = datetime.now(timezone.utc).isoformat()
@@ -242,8 +302,11 @@ def main() -> int:
         "roles": roles,
         "target": str(target),
         "commit": git("-C", str(repo), "rev-parse", "HEAD").stdout.strip(),
-        "skillCount": len(chosen),
-        "skills": sorted(chosen),
+        "skillCount": len(installed),
+        "skills": sorted(installed),
+        "removed": removed,
+        "unmanaged": foreign,
+        "conflicts": conflicts,
         "sources": [
             {"id": sid, "revision": manifest["_sources"][sid]["revision"],
              "resolvedRevision": prepared[sid][1]}
@@ -252,7 +315,15 @@ def main() -> int:
     })
     status_path.write_text(json.dumps(status, indent=2) + "\n", encoding="utf-8")
 
-    print(f"Installed {len(chosen)} skills for role(s) {' '.join(roles)} into {target}.")
+    print(f"Installed {len(installed)} skills for role(s) {' '.join(roles)} into {target}.")
+    if removed:
+        print(f"Removed {len(removed)} no longer selected: {', '.join(removed)}.")
+    if foreign:
+        print(f"Left {len(foreign)} skill(s) not managed here untouched: {', '.join(foreign)}.")
+    for name in conflicts:
+        print(f"WARNING: {name} is selected for this host but a skill of that name is "
+              "already here and was not placed by the sync; it was left alone and the "
+              "shared version was not installed", file=sys.stderr)
     return 0
 
 
