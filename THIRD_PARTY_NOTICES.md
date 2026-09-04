@@ -7,10 +7,11 @@ the updater installs them into a deployment clone directly from upstream.
 
 - Source: [mattpocock/skills](https://github.com/mattpocock/skills)
 - License: MIT, by Matt Pocock — full text in [`licenses/mattpocock-skills-MIT.txt`](licenses/mattpocock-skills-MIT.txt)
-- Pinned revision and skill inventory: [`skill-repository-sync/upstream-skills.json`](skill-repository-sync/upstream-skills.json)
+- Pinned revision and skill inventory: [`skills/skill-repository-sync/skill-manifest.json`](skills/skill-repository-sync/skill-manifest.json)
 
-The manifest is the single source of truth for which skills are installed and at
-which revision. Upstream groups its skills into category directories; the installer
+The manifest is the single source of truth for which skills exist, which group
+each belongs to, and at which revision an upstream one is pinned. A host receives
+only those whose group matches its declared roles. Upstream groups its skills into category directories; the installer
 flattens that layer so each one stays discoverable as `<skill-name>/SKILL.md`.
 Skill contents are installed unchanged.
 

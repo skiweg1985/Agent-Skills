@@ -1,5 +1,12 @@
 # How skills reach a Hermes host
 
+> **Superseded by [Role-based skill distribution](role-based-skill-distribution.md).**
+> The decision below solved the narrower question of how two shared skills reach a
+> Hermes host. The successor generalizes it: skills carry groups, hosts declare
+> roles, and the updater installs the intersection — which answers this question
+> as a special case and additionally keeps implementation skills off a coordinator
+> entirely. The context and the rejected alternatives here remain accurate.
+
 ## Context
 
 This repository serves two kinds of consumer from one tree:
