@@ -35,6 +35,7 @@ WAVE CLOSE <project>
 ```
 
 `SETUP`, `INIT` and `STATUS` write nothing externally and need no ceremony.
+
 **`START` and cron creation require an explicit human go-ahead**: that is where
 foreign code runs on other machines and where a recurring job is created. A
 schedule, a webhook, a tracker event, or a session waking up is never that
@@ -105,6 +106,7 @@ The lease is a liveness signal, not a timeout:
   SSH. Nothing else.
 - **Progress** is commits, pull requests and tracker comments. They say something
   happened, not that anyone is working now.
+
 A finished process has three possible states, and treating them as two loses work:
 
 - **Done** — a pull request is open and the process ended. Proceed to review.
@@ -190,8 +192,10 @@ with its session identifier, as the implementer does for its claim. Verify that
 record independently before merging, exactly as you verify the start comment. A
 review you only heard about is a worker's claim, and this skill does not treat a
 claim as evidence; relaying it in your own summary launders it into a fact.
+
 Findings that do not block go into the tracker as their own record with an owner,
 not into a closing paragraph where they are read once and lost.
+
 A review is work: it occupies a slot and its own lock. **The coordinator merges** —
 it is the only party that sees every write set in the wave and can tell whether
 two finished pull requests break together. When two collide, the first to finish
@@ -245,8 +249,9 @@ skill with the project as working directory, and persist its id through
 id the wave state already holds when the scheduler still knows it, and creates one
 only when that id names nothing — stopping a wave deliberately keeps its job, so a
 later start finds it rather than adding a rival. Two supervisors for one project
-is a blocker to report, not a mess to clean up quietly. Use a cron job rather than a background session: a
-background task dies with the host process while remote workers keep running for
+is a blocker to report, not a mess to clean up quietly.
+
+Use a cron job rather than a background session: a background task dies with the host process while remote workers keep running for
 hours, and nobody notices.
 
 **A recorded supervisor is not a running one.** `wave.json` holds the scheduler's
@@ -264,7 +269,9 @@ and that nobody can name, and a held lock without a supervisor is a lease nothin
 renews and a finished worker nobody notices. Removing the scheduler job is a
 separate, deliberate act.
 `WAVE CLOSE` removes the job after live verification that no worker, queued action
-or open review remains. A wave's scope is exhausted only when every issue in it is **merged or blocked**.
+or open review remains.
+
+A wave's scope is exhausted only when every issue in it is **merged or blocked**.
 An open pull request awaiting review is unfinished work, and an implementer that
 has stopped is not a finished issue. Closing on "the worker is done" ends the
 supervision before the review it was supposed to arrange.
@@ -292,6 +299,7 @@ expired, a supervisor found missing, a blocker, a wave closed. That is where the
 next agent, the next session and the reviewer look, and it outlives every chat.
 Post as the coordinator in its own voice, and never phrase a worker's action as
 your own — say that the coordinator verified, renewed or blocked something.
+
 Follow the tracker skill's comment conventions: natural sentences, no key-value
 scaffolding, the session identifier as the single trailing line.
 
@@ -330,13 +338,12 @@ to who is watching, and a wave that stops being watched without saying so cannot
 be noticed by anyone. The policy governs findings; it never governs a change to
 the supervision itself.
 
-None of this touches the tracker. The record is written either way; the policy
-only decides who gets woken. A decision, an approval, a
-blocker nobody else can clear, a finished wave. Not progress a human cannot act
-on: "the worker is still running" belongs in the tracker at most, and usually
-nowhere. If a message would tell the reader nothing they must do, it does not
-belong in the channel.
+What reaches a person is a decision, an approval, a blocker nobody else can clear,
+a finished wave. Not progress they cannot act on: "the worker is still running"
+belongs in the tracker at most, and usually nowhere. If a message would tell the
+reader nothing they must do, it does not belong in the channel.
 
-A tick that found nothing material writes nothing anywhere. The scheduler's own
-run log is not a report and needs no consideration; the local secrets-free ledger
-stays the orchestrator's memory for snapshot comparison, not a third audience.
+None of this touches the tracker. The record is written either way; the policy
+only decides who gets woken. The scheduler's own run log is not a report and needs
+no consideration, and the local secrets-free ledger stays the orchestrator's
+memory for snapshot comparison, not a third audience.

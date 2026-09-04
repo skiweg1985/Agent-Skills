@@ -106,6 +106,7 @@ python3 "$ORCH" notify set --quiet-hours 22:00-07:00 # host-wide; "none" removes
 Levels are a subscription, not a volume dial: `blocker` ⊂ `milestone` ⊂ `progress`.
 No level silences a change to the supervision itself — a paused, disabled or
 removed supervisor, or a closed wave, is always reported.
+
 Quiet hours are a host setting and let only blockers through; the rest is held and
 summarised afterwards. Report the effective level and where it came from, so the
 user can see whether a wave override is still in force.
@@ -192,9 +193,9 @@ Post each material finding to the issue in the tracker as the coordinator. Befor
 writing anything to the delivery channel, ask `notify decide --class …` and follow
 its answer: deliver, or hold it with `notify hold` and say nothing. On the first
 run after quiet hours end, call `notify flush` and send the held notices as one
-message. Send to the delivery channel only what a person must act on — a decision, an approval,
-an unclearable blocker, a finished wave. Never the same paragraph to both. A tick
-that found nothing material posts nothing anywhere.
+message. Send to the delivery channel only what a person must act on — a decision,
+an approval, an unclearable blocker, a finished wave. Never the same paragraph to
+both.
 
 ## `WAVE STOP <project>`
 
