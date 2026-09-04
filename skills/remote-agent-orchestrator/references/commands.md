@@ -10,7 +10,7 @@ Create or review the local foundation without touching any project.
 1. Confirm `linear-coordinate-agents` and `cost-aware-agent-routing` are present.
    If either is missing, report it and stop — the orchestrator delegates autonomy
    and routing to them and must not substitute its own judgement.
-2. Run `orchestratorctl.py setup`. It creates this installation's coordinator
+2. Run `orchestratorctl.py setup` (resolve its path as the skill file describes). It creates this installation's coordinator
    identity on first run and preserves every existing choice afterwards.
 3. Ask for the reachability of each agent that is missing one: host, user,
    working directory, and the exact command that starts it. Record it with
