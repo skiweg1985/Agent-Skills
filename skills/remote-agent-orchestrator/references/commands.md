@@ -129,73 +129,10 @@ unnoticed, and the wave never closes. Report it and name the job id.
 
 ## Supervisor tick
 
-Each scheduled run supervises; it does not widen the wave.
-
-**Work every step before touching the snapshot.** The snapshot says whether the
-world looks different, which is not the same as whether there is anything to do —
-the rules you run under can change between ticks, and no digest can see that. A
-tick that consults it early and stops there skips the merge it was supposed to
-perform.
-
-1. Refresh state and check liveness on each worker host over SSH.
-
-2. Renew the lease of every worker confirmed to be still running. Leave the rest
-   to expire, and record that they did. A live process is not progress: when a
-   worker has run far longer than the work should take with no new commit, report
-   that as a diagnosis instead of renewing forever.
-3. Decide what a finished process left behind before doing anything else. A pull
-   request means done; commits without one mean stalled, so re-dispatch that agent
-   to publish and keep its lock; neither means dead, so release the lock now
-   instead of waiting out the lease, and say why.
-4. For work that is done, request review from an agent other than the implementer,
-   and require it to publish its own findings: a pull request review, or a tracker
-   comment under its own identity carrying its session identifier. If no other
-   agent is available or preflight-ready, the issue is **blocked** — report it and
-   move on to the next candidate. Never review your own dispatch to keep the wave
-   moving; a coordinator that reviews is no longer an independent check.
-5. For reviewed work, **first read that record back**. No published review means
-   the work is not reviewed, whatever the reviewer reported to you; do not merge,
-   and say what is missing. Then check the diff against the declared write set.
-   Files beyond it that overlap another active worker are a hard stop; files that
-   overlap nobody and are covered by the review are recorded as a deviation on the
-   issue and merged. Say which of the two you found, and name the files. Record non-blocking findings as their own tracker items with an owner
-   before closing, rather than listing them in the closing report.
-   Two finished pull requests that collide merge in completion order; the later
-   one rebases, and a non-trivial rebase becomes a blocked issue back to a worker.
-6. Dispatch the next issue **inside the authorized scope** when a slot frees.
-7. Re-examine every standing blocker against the rules of *this* run before
-   treating it as still blocking. A blocker recorded under an earlier rule is a
-   decision, not a fact, and decisions are re-made when the rule changes.
-8. Close the wave only when every issue in scope is merged or blocked. An open
-   pull request, a review not yet published, or a stalled worker all count as
-   unfinished. Then remove the cron job, release completed locks, and write the
-   final report — and report the closure itself, because it ends the supervision.
-
-Only now store the snapshot, and only to decide what to say:
-
-```bash
-python3 "$ORCH" snapshot --project <key> --input <refreshed-state.json> --summary "<what changed>"
-```
-
-`changed: false` says the world looks as it did, not that nothing was done. A tick
-that merged, released a lock or requested a review reports it whatever the digest
-says. Only a tick that both found nothing new **and** performed no action stays
-silent: answer exactly `[SILENT]`, which the scheduler recognises and does not
-deliver. Do not answer "nothing to report" — that is a message, and it is the
-noise silence exists to avoid.
-
-The one thing never made silent is a change to the supervision itself. Pausing,
-disabling or removing the supervisor, or closing the wave, is reported with its
-reason regardless of the notification level and regardless of quiet hours. A wave
-that stops being watched without saying so cannot be noticed by anyone.
-
-Post each material finding to the issue in the tracker as the coordinator. Before
-writing anything to the delivery channel, ask `notify decide --class …` and follow
-its answer: deliver, or hold it with `notify hold` and say nothing. On the first
-run after quiet hours end, call `notify flush` and send the held notices as one
-message. Send to the delivery channel only what a person must act on — a decision,
-an approval, an unclearable blocker, a finished wave. Never the same paragraph to
-both.
+The tick lives in `SKILL.md`, not here. It runs unattended every few minutes, and
+a rule the supervisor must follow on every run has to be in the file that is
+loaded with the skill — reference files are read on request, and an unattended run
+has no reason to ask.
 
 ## `WAVE STOP <project>`
 
