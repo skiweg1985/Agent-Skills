@@ -409,7 +409,14 @@ Post as the coordinator in its own voice, and never phrase a worker's action as
 your own — say that the coordinator verified, renewed or blocked something.
 
 Follow the tracker skill's comment conventions: natural sentences, no key-value
-scaffolding, the session identifier as the single trailing line.
+scaffolding, the session identifier as the single trailing line. Its two budgets
+apply here too, and a coordinator comment is almost always the routine kind — a
+dispatch, a renewed lease, a merge, a closed wave. Sixty words, short sentences,
+the outcome in the first one. Only a comment that carries findings or an agreed
+technical decision earns detail, and it still leads with its verdict. Measured
+over one wave, coordinator comments were the densest in the whole record at
+twenty-one words per sentence; they read as an audit trail rather than as
+somebody telling the team what happened.
 
 Use the reader's language, and in German use the agreed words: a wave is **ein
 Lauf** and one supervisor run is **ein Tick**. Never "Welle", never the English

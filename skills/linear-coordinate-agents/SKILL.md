@@ -186,8 +186,8 @@ Apply this rule prospectively. If an unpublished current commit lacks attributio
 
 Write the comment a helpful teammate would leave after doing the work. The reader should understand it on the first pass without decoding a template. Treat claim, status, conflict, blocker, release, handoff, and completion as internal event types, not labels to print.
 
-- Start with what matters now, using everyday workplace language. Prefer "Ich übernehme ...", "Backend und Migration sind fertig", or "Ich hänge gerade an ..." over a formal status introduction.
-- Most routine comments fit into one or two short paragraphs with two to five sentences. Use bullets only when three or more exact items are genuinely easier to scan. Most comments need no heading.
+- Put the outcome in the first sentence, and make that sentence stand alone. A reader who stops after it knows what happened or what you need. Evidence, scope and next steps follow it, never precede it. Prefer "Ich übernehme ...", "Backend und Migration sind fertig", or "Ich hänge gerade an ..." over a formal status introduction. A comment that opens with what you evaluated, read or re-assessed buries its own point.
+- A routine comment is one or two short paragraphs and stays inside the budgets below; do not carry a separate sentence count in your head. Use bullets only when three or more exact items are genuinely easier to scan. Most comments need no heading.
 - Sound conversational and direct without becoming vague or chatty. Use first person where ownership matters and simple verbs such as "ist fertig", "fehlt noch", "ich prüfe", or "ich warte auf". Prefer these over audit language such as "verifiziert", "gemäß", or "vollständiger Status" when an ordinary sentence says the same thing.
 - Let Linear identify the author and assignee. Do not repeat the account name in an `Agent:` field, and never publish Linear user IDs or account email addresses in routine comments.
 - Sign every comment with the session identifier when the runtime exposes one, as a single trailing line separated from the body:
@@ -199,20 +199,54 @@ Write the comment a helpful teammate would leave after doing the work. The reade
   This is the one exception to the no-scaffolding rule, and it exists because Linear shows only the account. Two sessions on one account otherwise appear as one person answering themselves, and neither can tell which comment it wrote. Keep the line to the identifier alone: no timestamp, no host, no account name, no status fields.
 - Sign consistently or not at all. A signature only identifies a writer if every comment carries one — with gaps, a missing line is ambiguous between "another session" and "forgot". If the runtime exposes no session identifier, omit the line everywhere rather than inventing a name that will not match next run.
 - Give each comment one purpose and only the context needed for that moment. Do not retell the full history or turn a short update into a criterion-by-criterion report.
-- Keep a routine claim or progress comment around 120 words or less and a completion or handoff around 180 words or less. Put longer contracts, audits, or detailed evidence in the issue description, PR, document, or follow-up issue and link to it naturally.
+- **Two kinds of comment, two budgets.** A routine comment — claim, progress, blocker, handoff, completion — is meant to be skimmed in seconds: about sixty words, never more than a hundred. A substantive comment — review findings, a measured result, an agreed technical or domain decision — carries whatever detail the next person needs to act and has no cap. Even then the verdict goes in the first line and the detail into bullets or a table, never into one long paragraph. Ask whether a reader could act on the short version: if yes, it is routine. Contracts and long audits still belong in the issue description, the PR or a follow-up issue.
+- **Budget sentences, not only comments.** Keep a sentence to about fifteen words and one fact. Chain at most two clauses; a semicolon that joins a third is the signal to split the sentence. In German prefer verbs over nouns: "ich habe geprüft" over "die Prüfung ist erfolgt", "es fehlt noch" over "es besteht Klärungsbedarf". This rule exists because the older word cap was not the binding constraint — comments that obeyed it still averaged seventeen words per sentence, while the examples below average nine, and it was the sentences that made them slow to read.
 - Keep technical facts exact where they help the next person act: issue ID, relevant path or service, branch, commit or PR, useful test result, blocker, protected scope, and next step. Precision should come from these concrete details, not from rigid fields.
 - Write facts into sentences. Never use `[agent-coordination:*]`, `Agent:`, `Completed:`, `Current:`, `Next:`, `Write set:`, `Synchronized through:`, similar key-value scaffolding, or a table for a routine update. The trailing session line above is the only permitted exception, and it carries the identifier alone.
 - Mention the last checked Linear time or Git ref only when it helps prevent a conflict. Write it naturally, for example: "Linear und `origin/main@abc1234` sind frisch abgeglichen."
 - Mention another account with `@displayName` only when that person needs to decide, review, or accept a handoff.
 - Read the draft once as the colleague receiving it. If it sounds like a generated status report, rewrite it as something you would actually send to a teammate while keeping the actionable details.
 
-Include what the reader needs for the current situation and leave out fields that add no value:
+Include what the reader needs for the current situation and leave out fields that add no value. These name what to cover, not how much to write: one fact per sentence, and drop any item that would not change what the reader does next.
 
 - For a claim, say what you are taking on, the boundary that protects parallel work, and when you will update again. Name the branch or exclusions only when they help prevent overlap.
 - For progress, say what is done, what remains, and the evidence that changes the next decision.
 - For a blocker or conflict, say where you stopped, why, what work is preserved, and whose answer or action is needed.
 - For a release or handoff, give the branch or commit, the useful validation result, the remaining work, and any risk the next person needs to know.
 - For completion, say what now works, where it landed, how it was checked, the real review or merge state, and only genuine follow-up work.
+
+The short examples in this skill are followed less often than they look, so here
+is the failure they are meant to prevent. Both comments below claim the same
+issue and carry the same facts. The first was written in a real wave and obeys
+every rule this skill had at the time.
+
+Too dense — four sentences, twenty words each, the scope packed behind a
+semicolon:
+
+```markdown
+Ich übernehme SUD-261 und verbinde den transienten Operational Snapshot mit
+aktueller PRTG-Evidenz; Standard-Dashboard und Location-Drill-down sollen daraus
+den erklärbaren Standortzustand anzeigen. Mein geplanter Schreibbereich umfasst
+`backend/app/operational_snapshot/**`, die bestehende interne PRTG-/Source- und
+API-Naht samt Tests, den Snapshot-Vertrag sowie die dafür nötigen Dashboard- und
+Location-Detail-Komponenten unter `frontend/src/**`.
+```
+
+The same claim, one fact per sentence:
+
+```markdown
+Ich übernehme SUD-261. Der Snapshot bekommt echte PRTG-Evidenz, Dashboard und
+Location-Detail zeigen sie an.
+
+Ich schreibe in `backend/app/operational_snapshot/**`, an der PRTG-Naht und in
+den beiden Frontend-Komponenten. Katalog, InfluxDB, SSE und Notifications fasse
+ich nicht an. Ich melde mich, sobald der PR steht.
+
+— Session `ops-wave-sud-261-axel`
+```
+
+Nothing a reader needs is missing from the second one. It is a third shorter and
+can be read at a glance.
 
 Historical comments with the old machine markers remain valid evidence. Parse them during discovery, but never imitate their presentation in a new comment.
 
