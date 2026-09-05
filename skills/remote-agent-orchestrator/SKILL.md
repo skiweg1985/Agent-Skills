@@ -36,15 +36,32 @@ WAVE CLOSE <project>
 
 `SETUP`, `INIT` and `STATUS` write nothing externally and need no ceremony.
 
-**`START` and cron creation require an explicit human go-ahead**: that is where
-foreign code runs on other machines and where a recurring job is created. A
+**`START` and scheduler creation require an explicit human go-ahead**: that is
+where foreign code runs on other machines and where a recurring job is created. A
 schedule, a webhook, a tracker event, or a session waking up is never that
 go-ahead.
+
+**The go-ahead outlives a stop the coordinator caused itself.** A wave that halted
+on a blocker, a failed review or an expired lease may be resumed under the same
+authorization once that reason is gone, including recreating its supervisor. Ask
+again only for a new goal, a wider scope, or a stop a person ordered. Treating
+every self-inflicted halt as a fresh authorization turns one blocker into a
+permanent one: the wave disables itself, and the work waits for a person to
+grant something they already granted.
 
 The go-ahead authorizes a **goal**, not a single dispatch. Within that scope the
 supervisor may dispatch on its own. The scope is a tracker milestone or an
 explicit issue list — never free text, which would be re-interpreted at every
 refresh and could drift while nobody changed anything.
+
+**The scope carries the work it produces.** An issue the wave creates because a
+scoped issue demanded it — a defect a review found, a follow-up the delivery
+exposed — belongs to that wave and is dispatched like any other, as long as it
+stays inside the same project and the resolved autonomy already permits it. A
+scope that only names what was known at the start guarantees that any wave
+finding a defect must stop, which is the opposite of supervision: the run learns
+something and then cannot act on it. Create the issue, link it to the one that
+produced it, and record that it entered the scope this way.
 
 Answering a question addressed to a team agent is the one dispatch that reaches
 outside that scope, because it produces a comment and changes no repository. See
@@ -272,6 +289,12 @@ the issue, applies to that one merge, and is never reused as standing permission
 Run **as many workers as there are issues with disjoint exclusive paths**, under
 the project's `maxWorkers` cap. The cap is an emergency brake, not the steering.
 
+Every tick tops the wave up. Count the running workers against the ready issues
+whose exclusive paths collide with nothing running, and dispatch the difference.
+A tick that ends with idle capacity and ready work has supervised the wave
+without advancing it; serialising work that could have run side by side is a
+choice, and it needs the same justification as any other.
+
 **Review is mandatory and performed by an agent other than the implementer.**
 **It must leave a record the coordinator did not write.** The reviewer posts its
 own findings under its own identity — a pull request review, or a tracker comment
@@ -342,8 +365,14 @@ only when that id names nothing — stopping a wave deliberately keeps its job, 
 later start finds it rather than adding a rival. Two supervisors for one project
 is a blocker to report, not a mess to clean up quietly.
 
-Use a cron job rather than a background session: a background task dies with the host process while remote workers keep running for
-hours, and nobody notices.
+Use the host's **scheduler** rather than a background session: a background task
+dies with the host process while remote workers keep running for hours, and
+nobody notices. Any scheduler serves as long as it survives the session, runs a
+prompt unattended, and can be listed, paused and removed by id; cron is one such
+implementation and the commands in `references/commands.md` name it only as the
+one configured here. Record the scheduler's job id in `wave.json` under
+`cronJobId` whatever the implementation is, so a coordinator moved to another
+harness finds its own supervisor by the same key.
 
 **The supervisor's prompt names the wave; it never restates the rules.** Put in it
 what is true of this wave alone — project key, repository, worker host, each
@@ -395,6 +424,14 @@ stdout is diagnostics, and only the pull request and the tracker comment count.
 Each scheduled run supervises; it does not widen the wave. Answering a question
 addressed to a team agent is not widening it: it publishes a comment and
 changes no repository.
+
+**A permitted action is taken, never proposed.** Before writing that something
+needs a decision, resolve the autonomy level and check it against the escalation
+list in the tracker skill. If the action appears on neither list, perform it and
+report what was done. "Eingreifen erforderlich" for an action the wave was
+already authorised to take is the most expensive sentence a tick can write: the
+run halts, the supervisor is removed, and somebody has to rebuild what a single
+dispatch would have finished.
 
 **Work every step before touching the snapshot.** The snapshot says whether the
 world looks different, which is not the same as whether there is anything to do —
