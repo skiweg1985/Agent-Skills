@@ -46,6 +46,10 @@ supervisor may dispatch on its own. The scope is a tracker milestone or an
 explicit issue list — never free text, which would be re-interpreted at every
 refresh and could drift while nobody changed anything.
 
+Answering a question addressed to a team agent is the one dispatch that reaches
+outside that scope, because it produces a comment and changes no repository. See
+**Questions between agents**.
+
 Read `references/commands.md` for the lifecycle and `references/agent-registry.md`
 for reachability and roles.
 
@@ -158,6 +162,60 @@ but never pushed, which from outside looks like an agent that stopped for no
 reason. Both checks are two commands; skipping them costs an hour of a worker
 repeating something that cannot succeed. A worktree the worker cannot write in is
 a hard stop for that issue — report it, do not substitute another agent.
+
+## Questions between agents
+
+A dispatched worker cannot be reached. It is a one-shot run: it posts its
+question, exits, and never wakes again. The tracker skill has an agent read its
+mentions on every scheduled wake, and a worker has no wake — so a question
+addressed to an agent arrives at an identity nobody is listening on. The asker
+then waits for an answer that cannot come, or proceeds on its own guess. Both
+were observed in one wave, and the guess left a duplicate migration revision in
+an open pull request.
+
+**The supervisor is the delivery mechanism.** Every tick collects the questions
+addressed to team agents that are still open, and dispatches the addressed agent
+to answer each one.
+
+- **Project-wide, not scope-wide.** Read the whole project tracker, not only the
+  issues in the authorized scope. A question arrives on whichever issue its asker
+  was working on, and this wave holds the only agents who can answer it.
+  Answering does not widen the wave, because a reply changes no repository.
+- **A reply run is read-only and takes no slot.** No worktree, no lock: no
+  commit, no branch, no claim, no assignment, no repository file. It reads where
+  it stands and publishes one comment. An agent that is already implementing can
+  take one alongside its own run, because the two share nothing — which is what
+  makes answering cheap enough to do on every tick rather than when a slot frees.
+- **An answer that names work does not perform it.** Named work becomes a
+  candidate for the ordinary route: a write set, an issue, a dispatch inside an
+  authorized scope. A reply run that starts implementing has turned a
+  coordination act into an unreviewed change.
+- **A question addressed to a person is never dispatched.** It is a decision, and
+  it reaches its reader through the delivery channel under **Reporting**. No
+  agent answers on a human's behalf.
+
+**Resolve the addressee from the registry, never from the name.** Each agent's
+tracker identity is recorded there, and a question is routed by matching the name
+it addresses against that field. That "Axel Foundry" looks like `axel-codex` is a
+guess of exactly the kind this skill forbids at dispatch, and it would answer as
+the wrong agent the first time a team is renamed. A name that no registry entry
+claims is reported, not routed.
+
+**Send the question with the facts it rests on, and have the premise checked
+first.** A question is asked at one moment and read at another, and in between the
+pull request it names can merge and the file it worries about can move. So the
+reply prompt carries the issue, the comment and the state as this tick just
+refreshed it, and it requires the answer to verify what the question assumes and
+to say which assumption no longer holds. In one wave a question about a
+colleague's open pull request went out nineteen seconds after that pull request
+had merged; answering it as asked would have confirmed a conflict that no longer
+existed and missed the one that did.
+
+**Answered is structural, not remembered.** A reply is posted into the thread of
+the question it answers, so a question is open exactly when no comment by the
+addressed agent hangs beneath it. Nothing has to carry between ticks, a tick that
+dies mid-run leaves the next one the same picture, and the snapshot stays out of
+it: the snapshot decides what to say, and this is what to do.
 
 ## Write sets
 
@@ -334,7 +392,9 @@ stdout is diagnostics, and only the pull request and the tracker comment count.
 
 ## Supervisor tick
 
-Each scheduled run supervises; it does not widen the wave.
+Each scheduled run supervises; it does not widen the wave. Answering a question
+addressed to a team agent is not widening it: it publishes a comment and
+changes no repository.
 
 **Work every step before touching the snapshot.** The snapshot says whether the
 world looks different, which is not the same as whether there is anything to do —
@@ -352,13 +412,19 @@ perform.
    request means done; commits without one mean stalled, so re-dispatch that agent
    to publish and keep its lock; neither means dead, so release the lock now
    instead of waiting out the lease, and say why.
-4. For work that is done, request review from an agent other than the implementer,
+4. Answer what was asked of the team. Read the project tracker for questions
+   addressed to a team agent that no reply from that agent answers yet, and
+   dispatch the addressed agent for each one. This is the cheapest action a tick
+   takes and it unblocks the most, because a worker whose question goes
+   unanswered either waits or guesses. It runs project-wide and read-only under
+   **Questions between agents**.
+5. For work that is done, request review from an agent other than the implementer,
    and require it to publish its own findings: a pull request review, or a tracker
    comment under its own identity carrying its session identifier. If no other
    agent is available or preflight-ready, the issue is **blocked** — report it and
    move on to the next candidate. Never review your own dispatch to keep the wave
    moving; a coordinator that reviews is no longer an independent check.
-5. For reviewed work, **first read that record back**. No published review means
+6. For reviewed work, **first read that record back**. No published review means
    the work is not reviewed, whatever the reviewer reported to you; do not merge,
    and say what is missing. Then check the diff against the declared write set.
    Files beyond the exclusive paths that overlap another active worker's exclusive
@@ -370,14 +436,14 @@ perform.
    one rebases. A conflict confined to declared shared files is reconciled by its
    implementer and keeps its review; any other conflict becomes a blocked issue
    back to a worker and is reviewed again.
-6. Dispatch the next issue **inside the authorized scope** when a slot frees.
-7. Re-examine every standing blocker against the rules of *this* run before
+7. Dispatch the next issue **inside the authorized scope** when a slot frees.
+8. Re-examine every standing blocker against the rules of *this* run before
    treating it as still blocking. A blocker recorded under an earlier rule is a
    decision, not a fact, and decisions are re-made when the rule changes. The
    rules of this run are this skill's: where the job's own prompt states one
    differently, that is a copy taken when the wave started, not an override —
    follow the skill, and report that the prompt is stale.
-8. Close the wave only when every issue in scope is merged or blocked. An open
+9. Close the wave only when every issue in scope is merged or blocked. An open
    pull request, a review not yet published, or a stalled worker all count as
    unfinished. Then remove the cron job, release completed locks, and write the
    final report — and report the closure itself, because it ends the supervision.
@@ -443,8 +509,8 @@ happened is the failure this avoids.
 
 **Silence is for having nothing to do, never for having nothing new to say.**
 Decide what to do first, then decide whether to speak. A tick that could merge,
-release a lock, request a review or dispatch within scope performs that action and
-reports it — even when the external state looks exactly as it did last time. State
+release a lock, request a review, answer an open question or dispatch within scope
+performs that action and reports it — even when the external state looks exactly as it did last time. State
 that has not changed is not the same as a decision that has not changed: a rule
 you gained since the last run can make yesterday's blocker today's merge.
 

@@ -102,6 +102,52 @@ class Setup(Base):
         result = self.run_cli("setup", "--role", "review=ghost")
         self.assertIn("ghost", result["rolesWithoutRegistryEntry"])
 
+    def register(self, agent: str, *extra: str) -> None:
+        self.run_cli("setup", "--agent", agent, "--host", "build-1.example",
+                     "--user", "agent", "--invocation", "codex exec {prompt}", *extra)
+
+    def test_records_the_tracker_identity_an_agent_is_addressed_by(self) -> None:
+        self.setup_host()
+        self.register("worker-1", "--tracker-identity", "linear:worker1:u-42")
+        registry = json.loads((self.root / "config" / "agents.json").read_text())
+        identity = registry["agents"]["worker-1"]["trackerIdentity"]
+        self.assertEqual(identity, {"provider": "linear", "displayName": "worker1",
+                                    "userId": "u-42"})
+
+    def test_tracker_identity_survives_a_reachability_correction(self) -> None:
+        """Who an agent is in the tracker does not change with how it is reached."""
+        self.setup_host()
+        self.register("worker-1", "--tracker-identity", "linear:worker1")
+        self.register("worker-1", "--workdir", "/srv/other")
+        registry = json.loads((self.root / "config" / "agents.json").read_text())
+        entry = registry["agents"]["worker-1"]
+        self.assertEqual(entry["workdir"], "/srv/other")
+        self.assertEqual(entry["trackerIdentity"]["displayName"], "worker1")
+
+    def test_two_agents_may_not_claim_one_tracker_identity(self) -> None:
+        """A question names one display name; two claimants route it silently wrong."""
+        self.setup_host()
+        self.register("worker-1", "--tracker-identity", "linear:worker1")
+        error = self.run_cli("setup", "--agent", "worker-2", "--host", "build-2.example",
+                             "--user", "agent", "--invocation", "codex exec {prompt}",
+                             "--tracker-identity", "Linear:Worker1", expected=2)
+        self.assertIn("same tracker identity", error["error"])
+
+    def test_tracker_identity_without_a_display_name_is_rejected(self) -> None:
+        self.setup_host()
+        error = self.run_cli("setup", "--agent", "worker-1", "--host", "build-1.example",
+                             "--user", "agent", "--invocation", "codex exec {prompt}",
+                             "--tracker-identity", "linear", expected=2)
+        self.assertIn("PROVIDER:DISPLAYNAME", error["error"])
+
+    def test_reports_agents_that_cannot_be_addressed(self) -> None:
+        """An agent without a tracker identity works and cannot be asked anything."""
+        self.setup_host()
+        self.register("worker-1")
+        self.register("worker-2", "--tracker-identity", "linear:worker2")
+        result = self.run_cli("setup")
+        self.assertEqual(result["agentsWithoutTrackerIdentity"], ["worker-1"])
+
 
 class Projects(Base):
     def test_same_repository_and_tracker_dedupes_across_labels(self) -> None:

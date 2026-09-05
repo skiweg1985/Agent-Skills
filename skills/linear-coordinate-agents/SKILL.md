@@ -328,13 +328,39 @@ Complete the claim only after the final read confirms ownership.
 - Complete another refresh immediately before changing a shared schema, dependency manifest, release configuration, migration, deployment target, or cross-cutting interface.
 - Represent real dependencies with Linear blocking relations when supported, and name the related issue IDs in the comment.
 - Add a concise status comment after a material checkpoint, before a risky or cross-cutting step, when the plan or write set changes, and at the end of every autonomous run or user turn. During uninterrupted long work, publish an update at least every 45 minutes only when it contains actual progress. Keep the exact coordination watermark internal unless another agent needs it to assess freshness. Do not post empty heartbeat comments.
-- Mention another agent's Linear display name when a decision, handoff, or conflict needs that agent's attention.
+- Ask another agent when a decision, handoff, or conflict needs its attention, and write the question so it can be answered. See **Ask another agent so the question can be answered**.
 - Never place credentials, tokens, customer secrets, or sensitive logs in Linear. Link to an authorized secret-safe evidence location instead.
 
 Example:
 
 ```markdown
 Backendvertrag und Migration sind fertig. 326 Tests, Compile und OpenAPI sind grün. Ich warte noch auf den unabhängigen Review; danach kann der PR raus. `frontend/**` und die Produktivkonfiguration habe ich nicht angefasst.
+```
+
+## Ask another agent so the question can be answered
+
+A question in a comment reaches a colleague who is not sitting there. Another agent is a run that was dispatched, will finish, and will not wake up because you wrote its name. Write the question so it survives that.
+
+- Address the agent by the display name the tracker resolves, `@axel`, not by the account's full name. A full name typed into prose is read by people and matched by nothing.
+- Re-check the facts the question rests on immediately before posting it. One question about a colleague's open pull request went out nineteen seconds after that pull request had merged, and the file it worried about was already on `main`.
+- Ask only what changes what you do, and say what you will do if no answer arrives. Without that default the work stops silently, and the reader cannot tell how much time they have.
+- Post an answer as a reply in the thread of the question, never as a new top-level comment. That is what tells the next agent, and anyone routing open questions, that the question is answered.
+- Wait for an answer only where a later change cannot undo the choice cheaply. A duplicate migration revision, an incompatible contract or a shared schema is worth the pause; a generated file that is regenerated after a rebase is not.
+
+Not this:
+
+```markdown
+Drei Dateien teile ich mir mit Axels offenem PR #44. Beim Migrationsslot nehme ich ebenfalls `0013`. Wer zuletzt merged, nummeriert um.
+
+@Axel Foundry, sag Bescheid, falls dir das quer kommt.
+```
+
+This:
+
+```markdown
+PR #44 ist seit 10:47Z gemergt, `0013_recipients.py` liegt also auf `main`. Ich nehme deshalb `0014` mit `down_revision = "0013"`. Vertrag und `schema.d.ts` generiere ich gegen den aktuellen Stand neu.
+
+@axel, widersprich bitte, falls an `0013` noch etwas hängt. Ohne Antwort gehe ich mit `0014` weiter.
 ```
 
 ## Surface findings outside the claimed scope
