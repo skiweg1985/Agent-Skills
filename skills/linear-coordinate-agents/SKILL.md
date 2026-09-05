@@ -358,7 +358,7 @@ Drei Dateien teile ich mir mit Axels offenem PR #44. Beim Migrationsslot nehme i
 This:
 
 ```markdown
-PR #44 ist seit 10:47Z gemergt, `0013_recipients.py` liegt also auf `main`. Ich nehme deshalb `0014` mit `down_revision = "0013"` und generiere Vertrag und `schema.d.ts` gegen den aktuellen Stand neu.
+PR #44 ist seit 10:47Z gemergt, `0013_recipients.py` liegt also auf `main`. Ich nehme deshalb `0014` mit `down_revision = "0013"`. Vertrag und `schema.d.ts` generiere ich gegen den aktuellen Stand neu.
 
 @axel, widersprich bitte, falls an `0013` noch etwas hängt. Ohne Antwort gehe ich mit `0014` weiter.
 ```
