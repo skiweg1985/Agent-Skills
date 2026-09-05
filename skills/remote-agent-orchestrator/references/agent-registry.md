@@ -23,7 +23,8 @@ All three live under the local roots, never in this repository.
       "user": "agent",
       "workdir": "/srv/work",
       "branchPrefix": "wave/",
-      "invocation": "codex exec {prompt}"
+      "invocation": "codex exec {prompt}",
+      "trackerIdentity": {"provider": "linear", "displayName": "worker1"}
     }
   }
 }
@@ -34,8 +35,21 @@ Record it with:
 ```bash
 python3 scripts/orchestratorctl.py setup --agent worker-1 \
   --host build-1.example --user agent --workdir /srv/work \
-  --invocation 'codex exec {prompt}'
+  --invocation 'codex exec {prompt}' \
+  --tracker-identity linear:worker1
 ```
+
+**The tracker identity says who this agent is when somebody addresses it.**
+Workers talk to each other on the issues, and a supervisor routing a question to
+the agent whose *name resembles* the one addressed is guessing — the same guess
+the invocation template exists to prevent. Record `provider` and the display name
+exactly as the tracker spells it, optionally the stable user id for audit. Two
+agents may not claim one identity, and a name no entry claims is reported rather
+than routed. The field is optional: an agent without one is dispatchable for work
+and unreachable for questions, which is worth knowing before a wave starts. It
+carries no secret, and `setup` keeps it when a later run corrects a host or a
+port, because who an agent is in the tracker does not change with how it is
+reached.
 
 **Never store credentials here.** No key, no passphrase, no token. Public-key
 authentication is provisioned on the hosts themselves; the orchestrator verifies

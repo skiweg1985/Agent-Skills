@@ -164,11 +164,54 @@ def check_agent(agent_id: str, entry: dict) -> None:
     if not entry.get("invocation"):
         raise Problem(f"agent {agent_id!r}: an explicit invocation template is required; "
                       "agent CLIs differ and must never be guessed from a name")
+    identity = entry.get("trackerIdentity")
+    if identity is not None:
+        if not isinstance(identity, dict):
+            raise Problem(f"agent {agent_id!r}: trackerIdentity must be an object")
+        for field in ("provider", "displayName"):
+            if not str(identity.get(field) or "").strip():
+                raise Problem(f"agent {agent_id!r}: trackerIdentity requires '{field}'")
     # The registry says where an agent lives, never how to authenticate as one.
     leaked = sorted(k for k in entry if re.search(r"key|token|secret|password|passphrase", k, re.I))
     if leaked:
         raise Problem(f"agent {agent_id!r}: registry must not hold credentials "
                       f"(found {', '.join(leaked)}); public-key auth is set up on the host")
+
+
+def tracker_handle(entry: dict) -> tuple[str, str] | None:
+    identity = entry.get("trackerIdentity")
+    if not isinstance(identity, dict):
+        return None
+    return (str(identity["provider"]).strip().lower(),
+            str(identity["displayName"]).strip().lower())
+
+
+def check_registry(agents: dict) -> None:
+    # A question names one display name. If two agents claim it, routing picks the
+    # wrong one silently, so refuse the ambiguity where it is written down.
+    seen: dict[tuple[str, str], str] = {}
+    for agent_id, entry in sorted(agents.items()):
+        handle = tracker_handle(entry)
+        if handle is None:
+            continue
+        if handle in seen:
+            raise Problem(f"agents {seen[handle]!r} and {agent_id!r} claim the same tracker "
+                          f"identity {handle[0]}:{handle[1]}; one name must name one agent")
+        seen[handle] = agent_id
+
+
+def parse_tracker_identity(value: str | None) -> dict | None:
+    if value is None:
+        return None
+    provider, separator, rest = value.partition(":")
+    display, _, user_id = rest.partition(":")
+    if not separator or not provider.strip() or not display.strip():
+        raise Problem("--tracker-identity must be PROVIDER:DISPLAYNAME[:USERID], "
+                      "with the display name spelled as the tracker spells it")
+    identity = {"provider": provider.strip(), "displayName": display.strip()}
+    if user_id.strip():
+        identity["userId"] = user_id.strip()
+    return identity
 
 
 def parse_bindings(values: list[str]) -> dict[str, str]:
@@ -314,10 +357,17 @@ def cmd_setup(args: argparse.Namespace) -> dict:
                  "public-key authentication is provisioned on the host itself.",
     }, what="agent registry")
     if args.agent:
+        previous = registry.get("agents", {}).get(args.agent, {})
+        identity = parse_tracker_identity(args.tracker_identity)
+        if identity is None and isinstance(previous, dict):
+            # Who an agent is in the tracker does not change because a port was
+            # corrected, and it is not re-stated on every setup call.
+            identity = previous.get("trackerIdentity")
         entry = {
             "transport": args.transport,
             "invocation": args.invocation,
             "workdir": args.workdir,
+            "trackerIdentity": identity,
         }
         if args.transport == "ssh":
             entry["host"] = args.host
@@ -329,11 +379,13 @@ def cmd_setup(args: argparse.Namespace) -> dict:
         entry = {k: v for k, v in entry.items() if v is not None}
         check_agent(args.agent, entry)
         registry.setdefault("agents", {})[args.agent] = entry
+        check_registry(registry["agents"])
         registry["updatedAt"] = stamp()
         atomic_json(registry_path, registry)
     else:
         for agent_id, entry in registry.get("agents", {}).items():
             check_agent(agent_id, entry)
+        check_registry(registry.get("agents", {}))
         if created_registry:
             atomic_json(registry_path, registry)
 
@@ -351,6 +403,7 @@ def cmd_setup(args: argparse.Namespace) -> dict:
     roles = load_roles(config)
     agents = load_agents(config)
     unbound = sorted({a for a in roles.values() if a} - set(agents))
+    unaddressable = sorted(a for a, entry in agents.items() if tracker_handle(entry) is None)
     return {
         "coordinatorId": identity,
         "teamProfileCreated": created_profile,
@@ -361,6 +414,7 @@ def cmd_setup(args: argparse.Namespace) -> dict:
         "roles": roles,
         "agents": sorted(agents),
         "rolesWithoutRegistryEntry": unbound,
+        "agentsWithoutTrackerIdentity": unaddressable,
         "nextAction": (
             "Add a registry entry for every bound role, then run a fresh remote preflight. "
             "Ask the user only for missing access, approval, or a role decision."
@@ -753,6 +807,8 @@ def build_parser() -> argparse.ArgumentParser:
     setup.add_argument("--workdir")
     setup.add_argument("--branch-prefix")
     setup.add_argument("--invocation", help="explicit command template for this agent")
+    setup.add_argument("--tracker-identity", metavar="PROVIDER:DISPLAYNAME[:USERID]",
+                       help="who this agent is when a tracker comment addresses it")
     setup.set_defaults(func=cmd_setup)
 
     project = subs.add_parser("project").add_subparsers(dest="project_command", required=True)
