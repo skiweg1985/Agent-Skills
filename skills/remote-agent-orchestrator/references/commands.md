@@ -46,7 +46,7 @@ repository maps to several tracker projects or the directory is not a worktree.
    rather than paths, and overlaps between exclusive paths. Name the issues a
    `START` would first have to send to a coding agent for derivation.
 
-`INIT` must not create a cron job, dispatch a worker, change issue ownership,
+`INIT` must not create a scheduler job, dispatch a worker, change issue ownership,
 commit, push, merge, deploy, or write anything externally.
 
 ## `WAVE START <project> <milestone|issue …>`
@@ -174,6 +174,6 @@ and after a stop nobody is watching for that.
 After verifying live that no worker, queued action or open review remains, and
 that every merged issue carries a published review record and its non-blocking
 findings have somewhere to live:
-**release completed locks first, then remove the cron job**, keep the local
+**release completed locks first, then remove the scheduler job**, keep the local
 profile and ledger, and report the final evidence. In that order — a lock left
 behind after the supervisor is gone has nobody to clean it up.
