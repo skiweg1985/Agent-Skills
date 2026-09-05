@@ -55,6 +55,47 @@ For A2 and A3, merge only when the issue remains assigned to the authenticated a
 
 An explicit project lead comment may grant one action-scoped exception up to A3. It does not authorize production or destructive work. Never reuse an old exception as standing permission for later issues or actions.
 
+## Decide instead of asking
+
+Autonomy is permission already granted. Asking for it again spends a person's
+attention on an answer the rules contain, and at A2 and A3 that is the common
+failure: work stops with everything green, waiting for a yes that no rule
+required. A stopped wave also costs more than the action would have, because the
+supervisor is removed and restarting it is a fresh setup.
+
+Before escalating anything, check whether it is already covered:
+
+- **Tracker maintenance is never a question.** Creating, splitting, relabelling
+  and linking issues inside the project's scope is the agent's job. A defect
+  found after a merge becomes a new issue with an owner, created immediately —
+  not a request for permission to create one.
+- **How to cut the work is the agent's call.** "One issue, one branch, one pull
+  request" is satisfied by creating the issue the branch belongs to. Needing a
+  second issue is not an exception to that rule; it is the rule working.
+- **A deviation the rules tell you how to grade is graded, not escalated.** A
+  write-set breach that collides with nobody, or a shared file both issues only
+  append to, is recorded and carried on with.
+- **A step the assigned task explicitly authorises stays in scope**, even when it
+  touches a directory, host or file the agent would otherwise leave alone. A
+  persona's general caution never overrides a specific instruction it was given.
+  An agent that refuses its own task because the task looks unusual has not been
+  careful, it has been unavailable.
+
+Escalate only these, and say which one applies:
+
+1. Production, deployment, or a write to a live external system.
+2. Credential exposure, or an action whose blast radius reaches outside the
+   project.
+3. Destructive or irreversible loss of somebody else's work or data.
+4. Work outside the product's scope — the product, not the convenience of the
+   current issue.
+5. A real contradiction between two binding rules that no grading rule resolves.
+6. A technical blocker the agent cannot remove with the access it has.
+
+Everything else is decided and recorded. The record is what makes deciding safe:
+it shows who decided and on what evidence, so a wrong call is visible and
+correctable instead of silent.
+
 ## Keep durable rules and finite plans apart
 
 A repository is a product and does not end. A Linear project has a state that ends. Modelling one permanent project per repository breaks both: the project never reaches a completed state, its milestone percentages stop meaning anything once later efforts land in the same list, and nobody is ever forced to decide what happens to the leftovers.
