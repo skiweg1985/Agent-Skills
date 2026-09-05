@@ -27,6 +27,30 @@ A person or model may cover more than one class only when the current team profi
 5. For mixed work, define the contract boundary first, then split into non-overlapping issues or sequential handoffs. Do not assign two agents to the same files or decision surface concurrently.
 6. Require independent verification before accepting a worker's completion claim.
 
+## Route a decision, not only work
+
+A question that needs a judgement call is routed like work, with one difference:
+it goes to the **most capable** agent for its domain, not to the cheapest one
+that could produce an answer. Cost control applies to volume. It does not apply
+to the few decisions a project turns on, where a cheap wrong answer is paid for
+in the rework it causes.
+
+- A decision inside one specialty goes to that specialist.
+- A decision spanning specialties goes to the agent whose specialty owns the
+  contract the decision changes. When none does, it goes to the strongest
+  generalist on the team.
+- The support agent prepares decisions and does not make them alone. Gathering
+  the options, the evidence and the trade-offs is exactly the bounded, verifiable
+  work it is good at; choosing between them is not.
+
+Require the answer to name the option chosen, the options rejected, and the
+evidence that would change the choice. An answer without the rejected options is
+an opinion, and the next agent cannot tell whether the alternatives were weighed
+or never seen.
+
+Record the decision on the issue that raised the question, not in a report. A
+decision nobody can find is made again, differently.
+
 ## Good support-agent work
 
 Prefer the support role for:
