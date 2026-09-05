@@ -461,10 +461,20 @@ perform.
    to expire, and record that they did. A live process is not progress: when a
    worker has run far longer than the work should take with no new commit, report
    that as a diagnosis instead of renewing forever.
-3. Decide what a finished process left behind before doing anything else. A pull
-   request means done; commits without one mean stalled, so re-dispatch that agent
-   to publish and keep its lock; neither means dead, so release the lock now
-   instead of waiting out the lease, and say why.
+3. Decide what a finished process left behind before doing anything else. Look at
+   four states, not three, and look in the worktree before concluding anything.
+   A pull request means done. Commits without one mean stalled, so re-dispatch
+   that agent to publish and keep its lock. **Uncommitted changes in the worktree
+   also mean stalled**, not dead: the run ended mid-work and the work is real, so
+   re-dispatch it to commit, push and publish exactly that state, and tell it to
+   change nothing else. Only an empty worktree with no commits means dead, so
+   release the lock now instead of waiting out the lease, and say why.
+
+   The tracker is not evidence of any of this. A worker was observed reporting
+   real test numbers, setting its issue to the review state and leaving 177 lines
+   of finished work uncommitted in its worktree. Treating that as done would have
+   left the issue waiting for a review of nothing; treating it as dead would have
+   discarded the work. Read the worktree, then decide.
 4. Answer what was asked of the team. Read the project tracker for questions
    addressed to a team agent that no reply from that agent answers yet, and
    dispatch the addressed agent for each one. This is the cheapest action a tick
