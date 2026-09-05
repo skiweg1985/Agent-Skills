@@ -49,6 +49,12 @@ every self-inflicted halt as a fresh authorization turns one blocker into a
 permanent one: the wave disables itself, and the work waits for a person to
 grant something they already granted.
 
+**Scope the wave to the work, not to one issue.** A scope naming a single issue
+caps the wave at one worker however high `maxWorkers` stands, and no rule inside
+the run can recover the parallelism the scope gave away. Prefer a milestone, or
+the list of issues that are ready and whose exclusive paths do not collide. Take
+a single-issue scope only when a person asked for exactly that one.
+
 The go-ahead authorizes a **goal**, not a single dispatch. Within that scope the
 supervisor may dispatch on its own. The scope is a tracker milestone or an
 explicit issue list — never free text, which would be re-interpreted at every
@@ -207,9 +213,19 @@ to answer each one.
   candidate for the ordinary route: a write set, an issue, a dispatch inside an
   authorized scope. A reply run that starts implementing has turned a
   coordination act into an unreviewed change.
-- **A question addressed to a person is never dispatched.** It is a decision, and
-  it reaches its reader through the delivery channel under **Reporting**. No
-  agent answers on a human's behalf.
+- **A question addressed to a person is answered by the strongest agent first.**
+  Being a decision does not make it a person's decision. Route it to the agent
+  the routing skill names as most capable for that question's domain, give it the
+  evidence the asker had, and require an answer that states the option chosen, the
+  ones rejected, and what would change the choice. Record it on the issue as a
+  decision, not as an opinion. Only a question that lands on the escalation list
+  in the tracker skill goes to the delivery channel — production, blast radius
+  beyond the project, destructive loss, work outside the product, a real conflict
+  between binding rules, or a technical blocker no agent can remove. A design
+  choice inside the project is none of those. Deciding it at the strongest model
+  available and writing down why is faster than waiting, and the record makes a
+  wrong call visible and reversible. No agent answers on a human's behalf where
+  the escalation list applies.
 
 **Resolve the addressee from the registry, never from the name.** Each agent's
 tracker identity is recorded there, and a question is routed by matching the name
