@@ -19,6 +19,15 @@ from one wave and would drift apart if they were written down twice.
 | `surface_screenshot.share` | an issue names its design; the running application is the evidence |
 | `issues_per_merged_pr` | one collector record per wave |
 
+## When each rule is decided
+
+The six rules of 2026-09-06 are due for a decision once two further waves have
+been measured against the baseline below. For each one: keep, sharpen, or remove.
+A number that has not moved makes its rule a removal candidate, and keeping it
+then needs a stated reason next to the rule itself. Security and correctness are
+exempt from this test; see
+[the rule lifecycle decision](../../../docs/decisions/rules-carry-a-number.md).
+
 ## How a new row is made
 
 Run the collector on a host that has the GitHub CLI, then append the section it
