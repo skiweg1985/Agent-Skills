@@ -61,8 +61,19 @@ def parse_time(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
-def parse_day(value: str) -> datetime:
-    return datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+def parse_boundary(value: str) -> datetime:
+    """A window edge, as a date or a full timestamp.
+
+    A rule usually lands at a moment, not at midnight. Cutting the window only
+    by day mixes the wave before a change with the wave after it and makes the
+    comparison worthless, so a timestamp is accepted as well.
+    """
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except ValueError:
+        pass
+    moment = parse_time(value)
+    return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
 
 
 def hours_between(start: str, end: str) -> float:
@@ -190,8 +201,8 @@ def linear_issue_count(project: str, since: datetime, until: datetime | None) ->
 
 
 def build_row(args: argparse.Namespace) -> dict[str, Any]:
-    since = parse_day(args.since)
-    until = parse_day(args.until) if args.until else None
+    since = parse_boundary(args.since)
+    until = parse_boundary(args.until) if args.until else None
     prefixes = tuple(p.strip() for p in args.surface_paths.split(",") if p.strip())
 
     metrics = repository_metrics(
@@ -255,8 +266,8 @@ def render_table(row: dict[str, Any]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--repo", required=True, help="owner/name of the repository")
-    parser.add_argument("--since", required=True, help="window start, YYYY-MM-DD")
-    parser.add_argument("--until", help="window end, YYYY-MM-DD; open when omitted")
+    parser.add_argument("--since", required=True, help="window start, YYYY-MM-DD or ISO timestamp")
+    parser.add_argument("--until", help="window end, YYYY-MM-DD or ISO timestamp; open when omitted")
     parser.add_argument("--tracker-project", help="tracker project name for issue counts")
     parser.add_argument("--label", default="", help="wave label recorded in the row")
     parser.add_argument("--limit", type=int, default=200, help="pull requests to inspect")
