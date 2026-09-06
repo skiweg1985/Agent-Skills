@@ -361,6 +361,12 @@ review less. It is to spend the reviewer where a second pair of eyes changes the
 outcome, instead of holding six green pull requests for a day while one topic
 absorbs four review rounds.
 
+The rules in these two sections are measured. Their baseline, the number each
+one has to move, and when the decision on each is due are in
+[the delivery measurements](../linear-coordinate-agents/references/delivery-measurements.md).
+A rule whose number has not moved across two measured waves is removed or
+sharpened rather than kept out of habit.
+
 A review is work: it occupies a slot and its own lock. **The coordinator merges** —
 it is the only party that sees every write set in the wave and can tell whether
 two finished pull requests break together. When two collide, the first to finish

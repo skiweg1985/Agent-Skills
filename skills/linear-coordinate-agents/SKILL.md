@@ -341,6 +341,8 @@ Two failure modes follow from ignoring this, and both were observed in one proje
 
 Sequencing by visibility is a rule for the phase before a first demo, not forever. Once the product is demonstrable end to end, return to priority and dependency order.
 
+This rule is measured, as is the design reference below and the completion evidence further down. Their baseline and the number each one has to move are in [the delivery measurements](references/delivery-measurements.md); a rule whose number has not moved across two measured waves is removed or sharpened rather than kept out of habit.
+
 Create or split issues only when decomposition is necessary and issue creation is within the requested project scope. Preserve the parent project, team, milestone, relations, and acceptance criteria. Do not create global statuses or labels for coordination unless the user explicitly requests that workspace-wide change.
 
 **An issue that changes a surface a person sees names the design it implements.** Where the project keeps concepts, mockups or a design document, the issue references the specific file and carries an acceptance criterion that the result is compared against it. Without that criterion the issue is satisfied by any arrangement that shows the named fields, and the comparison never happens.
