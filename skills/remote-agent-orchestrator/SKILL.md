@@ -311,7 +311,8 @@ A tick that ends with idle capacity and ready work has supervised the wave
 without advancing it; serialising work that could have run side by side is a
 choice, and it needs the same justification as any other.
 
-**Review is mandatory and performed by an agent other than the implementer.**
+**Review is mandatory and performed by an agent other than the implementer**,
+except for the narrow class named under *When the second reviewer is not needed*.
 **It must leave a record the coordinator did not write.** The reviewer posts its
 own findings under its own identity — a pull request review, or a tracker comment
 with its session identifier, as the implementer does for its claim. Verify that
@@ -321,6 +322,44 @@ claim as evidence; relaying it in your own summary launders it into a fact.
 
 Findings that do not block go into the tracker as their own record with an owner,
 not into a closing paragraph where they are read once and lost.
+
+### What a review may block on
+
+**Only four classes block a merge: correctness, security, a broken contract or
+migration, and a missed acceptance criterion.** Everything else is a finding,
+recorded and merged past.
+
+Wording, naming, the language of a pull request title or description, formatting,
+documentation polish and refactoring taste are never blockers. They are real
+findings and they belong in the record, but a change that is correct, safe and
+green does not wait on them. A reviewer that returns CHANGES REQUESTED for one of
+them has stopped the wave for something the next commit could have carried.
+
+**One review round is the default.** A second round happens when the first found a
+blocker and the implementer pushed a fix; verify the fix, not the whole diff
+again. Do not send a change back a second time for a finding that was available in
+the first round and was not raised then.
+
+Findings that do not block are collected. **One open collector record per wave
+carries them, not one per pull request.** A tracker filling with "non-blocking
+follow-ups from PR #n" is the review machine generating its own backlog. Four such
+records in four days is the signal that the blocking bar sits too low.
+
+### When the second reviewer is not needed
+
+On a project whose resolved autonomy is A3 and whose non-production status is
+current, a change may merge on green CI with the implementer's own published
+evidence when **all** of these hold:
+
+- it touches no authentication, authorization, credential or secret path;
+- it changes no published contract, no schema and no migration;
+- it changes no deployment, proxy or runtime configuration;
+- its declared write set collides with nothing running.
+
+Everything outside that list keeps the independent review. The point is not to
+review less. It is to spend the reviewer where a second pair of eyes changes the
+outcome, instead of holding six green pull requests for a day while one topic
+absorbs four review rounds.
 
 A review is work: it occupies a slot and its own lock. **The coordinator merges** —
 it is the only party that sees every write set in the wave and can tell whether
