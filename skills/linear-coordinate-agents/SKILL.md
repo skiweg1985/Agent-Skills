@@ -231,22 +231,19 @@ Write the comment a helpful teammate would leave after doing the work. The reade
 - A routine comment is one or two short paragraphs and stays inside the budgets below; do not carry a separate sentence count in your head. Use bullets only when three or more exact items are genuinely easier to scan. Most comments need no heading.
 - Sound conversational and direct without becoming vague or chatty. Use first person where ownership matters and simple verbs such as "ist fertig", "fehlt noch", "ich prüfe", or "ich warte auf". Prefer these over audit language such as "verifiziert", "gemäß", or "vollständiger Status" when an ordinary sentence says the same thing.
 - Let Linear identify the author and assignee. Do not repeat the account name in an `Agent:` field, and never publish Linear user IDs or account email addresses in routine comments.
-- **One language per surface, and no mixing inside a sentence.** Repository
-  artifacts — commit messages, pull request titles and bodies, published
-  reviews, code comments, documentation — are written in English. Tracker
-  comments are written in the project's language. Both rules are absolute: a
-  reader should never have to guess which language a surface speaks.
-- **A German sentence carries German words.** Keep only the terms this project
-  has no German word for: Pull Request, Commit, Merge, Branch, Repository, CI.
-  Everything else is translated, and orchestration vocabulary especially:
-  *invocation* is der Aufruf, *claim* die Übernahme, *preflight* die
-  Vorabprüfung, *lock* die Sperre, *head* der Stand, *write set* der
-  Schreibbereich, *refresh* die Aktualisierung, *review* die Prüfung where the
-  noun is meant rather than the GitHub object. Never invent a compound out of
-  both languages: "Guide-Reconciliation", "PASS-Review" and "additive Punkte"
-  are not words. Measured over one wave, eleven German sentences carried
-  twenty-three English terms — two per sentence, in sentences that were already
-  short enough. Vocabulary, not syntax, is what made them unreadable.
+- **Write in the reader's language on every surface a person reads.** Tracker
+  comments, pull request titles, pull request bodies and published reviews take
+  the project's language. Code, commit messages and repository documentation
+  stay English, because their reader is the next developer in the file. Nobody
+  should open one pull request and find an English description above a German
+  review — that mixture was observed across a whole wave and it is the surface
+  a person actually reads to decide.
+- **Keep the technical terms English.** Words that German IT speaks in English
+  stay English inside a German sentence: Pull Request, Commit, Merge, Branch,
+  Repository, Review, Build, Deployment, Log, Test, CI. Translating them makes
+  the sentence harder, not easier, and nobody says "Abrufanfrage". What does not
+  belong is a whole paragraph in the wrong language, or a compound invented out
+  of both.
 - **Report the work, not the machinery.** A reader wants to know what happened
   to the change: what is done, what is blocked, what they must decide. Locks,
   leases, preflights, worktree paths and session bookkeeping are how the
