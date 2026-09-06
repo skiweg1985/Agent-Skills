@@ -14,8 +14,8 @@ Apply instructions in this order:
 1. Follow the user's current request and approval boundaries.
 2. Follow durable repository working agreements — `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, or their documented equivalent. These outlive any single planning project.
 3. Follow the finite planning record: the Linear project description, its milestones, and its definition of done.
-4. Follow the team's existing Linear workflow, language, statuses, labels, and assignment rules.
-5. Apply the defaults in this skill only where neither the repository nor the project has a more specific rule.
+5. Follow the team's existing Linear workflow, language, statuses, labels, and assignment rules.
+6. Apply the defaults in this skill only where neither the repository nor the project has a more specific rule.
 
 **Read the repository's working-agreement file before the project description, and read it in the same session you act in.** A Linear project is a finite effort that gets closed; the repository is the product and outlives it. Durable rules — roles, write areas, autonomy, merge gates, traceability — therefore belong in the repository, and a closed project must not take them with it.
 
@@ -43,7 +43,7 @@ Resolve the level in this order:
 3. Read the project autonomy label and an optional project document titled `Agenten-Autonomie`. The document may narrow the label or describe project-specific checks and targets; it is not required for routine prototype work.
 4. If the project has no autonomy label, infer A3 when current evidence clearly identifies a prototype, proof of concept, experiment, or project without production. An explicit statement in the Linear project summary or description is sufficient. Otherwise require consistent repository evidence such as only local or preview targets and no production configuration. If production status is unclear, use A1.
 5. Read an optional issue-description line matching `Agenten-Autonomie: A0|A1|A2|A3`. It may only lower the project level. Ignore a higher value as permission and report the mismatch when it affects the next action.
-6. Apply repository instructions, branch protection, and active user restrictions. When rules conflict, use the stricter rule unless the user's current instruction explicitly resolves the conflict.
+7. Apply repository instructions, branch protection, and active user restrictions. When rules conflict, use the stricter rule unless the user's current instruction explicitly resolves the conflict.
 
 Treat a project as production-connected when it has any production environment or release target, live customer or employee data, public users, shared business-critical infrastructure, or writes to a live external system. The absence of the word "production" is not evidence that none exists. Re-evaluate this classification whenever project metadata, deployment configuration, or repository instructions change.
 
@@ -134,7 +134,7 @@ When acting inside a project whose description carries durable rules, treat that
 4. Fetch each candidate issue with relations and read all recent comments before choosing it.
 5. When a repository issue tracker exists, resolve the authenticated repository-host identity independently from Linear. Inspect open issues assigned to that account and recent mentions, handoffs, or blocker reports relevant to the project. Never infer that the Linear and repository accounts represent the same person.
 6. For a scheduled, recurring, resumed, or otherwise autonomous run, review repository issue activity before selecting new work even when Linear already contains a candidate.
-7. Read the repository working-agreement file — `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, or the documented equivalent — in every session that will modify anything, not only when the issue touches code. Note any rule there that the project description contradicts. Inspect active branches or worktrees when the issue changes code or configuration.
+8. Read the repository working-agreement file — `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, or the documented equivalent — in every session that will modify anything, not only when the issue touches code. Note any rule there that the project description contradicts. Inspect active branches or worktrees when the issue changes code or configuration.
 8. Build a short conflict map of active issues and their declared or observable write sets, branches, infrastructure targets, shared schemas, and dependencies.
 9. Resolve the current autonomy level and whether the project is prototype-only, non-production, production-connected, or unclear. Record the evidence used.
 10. Record a coordination watermark using the newest server timestamps observed in Linear and the repository issue tracker and, for code work, the fetched Git remote refs used for comparison.
@@ -231,6 +231,31 @@ Write the comment a helpful teammate would leave after doing the work. The reade
 - A routine comment is one or two short paragraphs and stays inside the budgets below; do not carry a separate sentence count in your head. Use bullets only when three or more exact items are genuinely easier to scan. Most comments need no heading.
 - Sound conversational and direct without becoming vague or chatty. Use first person where ownership matters and simple verbs such as "ist fertig", "fehlt noch", "ich prüfe", or "ich warte auf". Prefer these over audit language such as "verifiziert", "gemäß", or "vollständiger Status" when an ordinary sentence says the same thing.
 - Let Linear identify the author and assignee. Do not repeat the account name in an `Agent:` field, and never publish Linear user IDs or account email addresses in routine comments.
+- **One language per surface, and no mixing inside a sentence.** Repository
+  artifacts — commit messages, pull request titles and bodies, published
+  reviews, code comments, documentation — are written in English. Tracker
+  comments are written in the project's language. Both rules are absolute: a
+  reader should never have to guess which language a surface speaks.
+- **A German sentence carries German words.** Keep only the terms this project
+  has no German word for: Pull Request, Commit, Merge, Branch, Repository, CI.
+  Everything else is translated, and orchestration vocabulary especially:
+  *invocation* is der Aufruf, *claim* die Übernahme, *preflight* die
+  Vorabprüfung, *lock* die Sperre, *head* der Stand, *write set* der
+  Schreibbereich, *refresh* die Aktualisierung, *review* die Prüfung where the
+  noun is meant rather than the GitHub object. Never invent a compound out of
+  both languages: "Guide-Reconciliation", "PASS-Review" and "additive Punkte"
+  are not words. Measured over one wave, eleven German sentences carried
+  twenty-three English terms — two per sentence, in sentences that were already
+  short enough. Vocabulary, not syntax, is what made them unreadable.
+- **Report the work, not the machinery.** A reader wants to know what happened
+  to the change: what is done, what is blocked, what they must decide. Locks,
+  leases, preflights, worktree paths and session bookkeeping are how the
+  coordinator keeps order; they belong in a comment only when they explain a
+  delay the reader would otherwise not understand.
+- **Keep the Markdown plain.** Short paragraphs, and bullets only for a real
+  list of three or more items. At most one heading level, and usually none. A
+  table only when the content is genuinely tabular, never as layout. Bold for
+  the one thing that must not be missed, not for every second noun.
 - Sign every comment with the session identifier when the runtime exposes one, as a single trailing line separated from the body:
 
   ```markdown
@@ -446,9 +471,10 @@ Offen ist nur noch die Anbindung der vier Felder im Frontend. Zieh vorher bitte 
 1. Complete a final coordination refresh of the issue, assigned repository issues, autonomy policy, production classification, changed project activity, active claims, and relevant Git remote state before integration, deployment, or completion.
 2. Verify every acceptance criterion and run the checks appropriate to the changed scope. For anything with a runtime effect, exercise the running result at least once end to end — a passing suite is not the same evidence. Green tests and healthy containers have both been observed while the service was in fact broken, because each test covered its own layer and none started the assembled system from the outside.
 3. Post a natural completion comment with concrete evidence.
-4. Move the issue to the project's completed state only when the work is actually complete and the project's review rules allow the transition. Otherwise move it only to the correct review state. When the team has a human acceptance state, completion is that state and not the terminal one — an agent does not mark its own work accepted.
-5. Keep the completed issue assigned to the implementing account unless the project convention requires another final owner.
-6. Publish a project-level status update only when this result changes project health, milestone readiness, priority, or cross-issue coordination.
+4. **Check that the pull request body carries the signature line.** Under a shared repository account the author column names the account, not the worker, so a body without `— <Agent Display Name> / Session `<id>`` leaves a reviewer unable to tell who wrote it or which run to ask. Measured across seven open pull requests from one wave, five carried it and two did not; all seven showed the same GitHub author. Add it before asking for a review, not afterwards.
+5. Move the issue to the project's completed state only when the work is actually complete and the project's review rules allow the transition. Otherwise move it only to the correct review state. When the team has a human acceptance state, completion is that state and not the terminal one — an agent does not mark its own work accepted.
+6. Keep the completed issue assigned to the implementing account unless the project convention requires another final owner.
+7. Publish a project-level status update only when this result changes project health, milestone readiness, priority, or cross-issue coordination.
 
 Example:
 
