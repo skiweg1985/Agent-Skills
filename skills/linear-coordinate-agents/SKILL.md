@@ -65,6 +65,12 @@ supervisor is removed and restarting it is a fresh setup.
 
 Before escalating anything, check whether it is already covered:
 
+- **The coordinator holds no implementation issues.** A finding parked on the
+  coordinating account freezes: the assignee lock makes it unavailable to every
+  worker, and the coordinator does not implement. Create a follow-up unassigned,
+  or assign it to the agent that will do it. One project accumulated eleven
+  review follow-ups on its coordinator this way; every one of them was ready and
+  none could be picked up.
 - **Tracker maintenance is never a question.** Creating, splitting, relabelling
   and linking issues inside the project's scope is the agent's job. A defect
   found after a merge becomes a new issue with an owner, created immediately —
