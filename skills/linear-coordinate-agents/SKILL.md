@@ -47,7 +47,7 @@ Resolve the level in this order:
 
 Treat a project as production-connected when it has any production environment or release target, live customer or employee data, public users, shared business-critical infrastructure, or writes to a live external system. The absence of the word "production" is not evidence that none exists. Re-evaluate this classification whenever project metadata, deployment configuration, or repository instructions change.
 
-For A2 and A3, merge only when the issue remains assigned to the authenticated agent, the PR is linked to that issue, the latest Linear and Git refresh shows no overlap, acceptance criteria are verified, the branch is mergeable, and no requested changes or unresolved review findings remain.
+For A2 and A3, merge only when the issue remains assigned to the authenticated agent, the PR is linked to that issue, the latest Linear and Git refresh shows no overlap, acceptance criteria are verified, the branch is mergeable, and no blocking review finding remains. A finding blocks when it concerns correctness, security, a broken contract or migration, or a missed acceptance criterion. Wording, naming, the language of a pull request title or description, formatting and documentation polish are recorded and merged past; they do not hold a correct, safe and green change.
 
 - On a production-connected project, require every configured CI check to pass. If no CI exists, require replacement checks explicitly named in repository or project guidance.
 - On an A3 prototype or no-production project, use the strongest relevant validation already available: tests, build, lint, type checks, or a focused smoke test. Missing CI alone is not a blocker, and creating process infrastructure is not a prerequisite for merging prototype work.
@@ -332,7 +332,18 @@ Prefer an existing issue that:
 
 Choose by the project's priority and dependency order. Do not cherry-pick a convenient low-priority task while higher-priority unblocked work is ready unless the project rules or user direct otherwise.
 
+**While a product has nothing demonstrable, order by visibility before dependency.** An early project is judged by what somebody can open in a browser, not by how many slices are internally complete. The issue that produces the visible shape therefore goes first, even when a purely functional slice looks readier.
+
+Two failure modes follow from ignoring this, and both were observed in one project inside five days:
+
+- **The design-carrying issue sits behind technical blockers.** The issue holding the visual system waited four days behind a live-update slice, a charting spike and a history query. Meanwhile a functionally scoped issue shipped a placeholder that met its own criteria and became the de-facto product. When an issue carries the visible shape and is blocked, split it so the shape ships against placeholder data. Do not let it wait for real data.
+- **No criterion ever names the intended appearance.** An issue that says "the dashboard shows these fields" is satisfied by any arrangement of those fields. Where a design concept exists, the issue names it and requires a comparison against it; see the delivery rules below.
+
+Sequencing by visibility is a rule for the phase before a first demo, not forever. Once the product is demonstrable end to end, return to priority and dependency order.
+
 Create or split issues only when decomposition is necessary and issue creation is within the requested project scope. Preserve the parent project, team, milestone, relations, and acceptance criteria. Do not create global statuses or labels for coordination unless the user explicitly requests that workspace-wide change.
+
+**An issue that changes a surface a person sees names the design it implements.** Where the project keeps concepts, mockups or a design document, the issue references the specific file and carries an acceptance criterion that the result is compared against it. Without that criterion the issue is satisfied by any arrangement that shows the named fields, and the comparison never happens.
 
 Treat a repository issue as intake, not as a replacement for the Linear ownership lock. Before implementing it, link it to an existing Linear issue or create the smallest appropriate Linear work item when issue creation is authorized, then complete the normal claim flow. If no Linear record can be created or verified, report the repository issue but do not begin overlapping modifying work.
 
@@ -473,11 +484,12 @@ Offen ist nur noch die Anbindung der vier Felder im Frontend. Zieh vorher bitte 
 
 1. Complete a final coordination refresh of the issue, assigned repository issues, autonomy policy, production classification, changed project activity, active claims, and relevant Git remote state before integration, deployment, or completion.
 2. Verify every acceptance criterion and run the checks appropriate to the changed scope. For anything with a runtime effect, exercise the running result at least once end to end — a passing suite is not the same evidence. Green tests and healthy containers have both been observed while the service was in fact broken, because each test covered its own layer and none started the assembled system from the outside.
-3. Post a natural completion comment with concrete evidence.
-4. **Check that the pull request body carries the signature line.** Under a shared repository account the author column names the account, not the worker, so a body without `— <Agent Display Name> / Session `<id>`` leaves a reviewer unable to tell who wrote it or which run to ask. Measured across seven open pull requests from one wave, five carried it and two did not; all seven showed the same GitHub author. Add it before asking for a review, not afterwards.
-5. Move the issue to the project's completed state only when the work is actually complete and the project's review rules allow the transition. Otherwise move it only to the correct review state. When the team has a human acceptance state, completion is that state and not the terminal one — an agent does not mark its own work accepted.
-6. Keep the completed issue assigned to the implementing account unless the project convention requires another final owner.
-7. Publish a project-level status update only when this result changes project health, milestone readiness, priority, or cross-issue coordination.
+3. **For a change a person can see, the evidence is the running application, not the merge.** Open the changed surface on the project's preview or on a locally started instance and attach a screenshot to the issue. Where the project keeps design concepts, put the screenshot next to the concept it implements and say where the two differ and why. "Pull request merged, CI green" has repeatedly signed off interfaces that met every written criterion and still looked nothing like the design — the gap stays invisible until somebody opens the page. A backend-only change needs no screenshot; naming the exercised seam is enough.
+4. Post a natural completion comment with concrete evidence.
+5. **Check that the pull request body carries the signature line.** Under a shared repository account the author column names the account, not the worker, so a body without `— <Agent Display Name> / Session `<id>`` leaves a reviewer unable to tell who wrote it or which run to ask. Measured across seven open pull requests from one wave, five carried it and two did not; all seven showed the same GitHub author. Add it before asking for a review, not afterwards.
+6. Move the issue to the project's completed state only when the work is actually complete and the project's review rules allow the transition. Otherwise move it only to the correct review state. When the team has a human acceptance state, completion is that state and not the terminal one — an agent does not mark its own work accepted.
+7. Keep the completed issue assigned to the implementing account unless the project convention requires another final owner.
+8. Publish a project-level status update only when this result changes project health, milestone readiness, priority, or cross-issue coordination.
 
 Example:
 
